@@ -27,10 +27,10 @@ memberA/chapter-1
 
 ### Commit
 ```
-[{Folder Name}] yyyy-MM-dd chapter {chapter-no}. {message}
+[{Folder Name}] yyyy-MM-dd {chapter-info} {message}
 
 ex) 
-[memberA] 2000-12-31 chapter 1. 임시저장
+[memberA] 2000-12-31 1.1 초난감 DAO
 ```
 
 ### Pull Request
@@ -38,7 +38,7 @@ ex)
 [{Folder Name}] {chapter title}
 
 ex) 
-[memberA] chapter 1. 오브젝트와 의존관계
+[memberA] 1. 오브젝트와 의존관계
 ```
 
 ### File
