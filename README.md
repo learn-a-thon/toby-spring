@@ -11,10 +11,10 @@
 - 개개인의 상황을 고려하여 **선행 학습을 제한하지 않는다.(오히려 권장)**
 
 ### 규칙
-- 스터디 참여시 보증금 입금
+- 스터디 참여시 보증금 20000원 입금
 - 학습 챕터 별 마감 기한은 2주
 - 마감 기한 안에 PR 요청을 못한 경우 벌금(특별한 사유는 제외)
-  - 벌금: 미요청 일수 x $원
+  - 벌금: 미요청 일수 x 5000원
 
 # Convention
 ### Branch
@@ -47,10 +47,10 @@ ex)
 
 ```
 // 학습 문서 파일 형식
-chapter {chapter number}. {chapter title}.md
+yyyy-MM-dd-chapter-{chapter number}-{chapter title}.md
 
 ex) 
-chapter 1. 오브젝트와 의존관계.md
+2000-12-31-chapter-1-오브젝트와-의존관계.md
 ```
 
 # 저장소 구조
@@ -59,12 +59,12 @@ chapter 1. 오브젝트와 의존관계.md
 ├ member1
 │  ├ images // 이미지 파일(Optional)
 │  ├ README.md // README(Optional)
-│  ├ chapter 1. 오브젝트와 의존관계.md // 학습 내용
+│  ├ 2000-12-31-chapter-1-오브젝트와-의존관계.md // 학습 내용
 │  └ ...
 │
 ├ member2
 │  ├ images // 이미지 파일(Optional)
 .  ├ README.md // README(Optional)
-.  ├ chapter 1. 오브젝트와 의존관계.md // 학습 내용
+.  ├ 2000-12-31-chapter-1-오브젝트와-의존관계.md // 학습 내용
 .  └ ...
 ```
