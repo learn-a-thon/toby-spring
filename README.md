@@ -47,10 +47,10 @@ ex)
 
 ```
 // 학습 문서 파일 형식
-yyyy-MM-dd-chapter-{chapter number}-{chapter title}.md
+{chapter number}. {chapter title}.md
 
 ex) 
-2000-12-31-chapter-1-오브젝트와-의존관계.md
+1. 오브젝트와 의존관계.md
 ```
 
 # 저장소 구조
@@ -59,12 +59,12 @@ ex)
 ├ member1
 │  ├ images // 이미지 파일(Optional)
 │  ├ README.md // README(Optional)
-│  ├ 2000-12-31-chapter-1-오브젝트와-의존관계.md // 학습 내용
+│  ├ 1. 오브젝트와 의존관계.md // 학습 내용
 │  └ ...
 │
 ├ member2
 │  ├ images // 이미지 파일(Optional)
 .  ├ README.md // README(Optional)
-.  ├ 2000-12-31-chapter-1-오브젝트와-의존관계.md // 학습 내용
+.  ├ 1. 오브젝트와 의존관계.md // 학습 내용
 .  └ ...
 ```
