@@ -1,5 +1,6 @@
 package toby.spring.user.dao;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -12,17 +13,26 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class UserDaoTest {
 
+    private UserDao userDao;
+    private User user1;
+    private User user2;
+    private User user3;
+
+    @BeforeEach
+    void setUp() {
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DaoFactory.class);
+        userDao = context.getBean("userDao", UserDao.class);
+
+        user1 = new User("gildong1", "홍길동1", "1001");
+        user2 = new User("gildong2", "홍길동2", "1002");
+        user3 = new User("gildong3", "홍길동3", "1003");
+    }
+
     //junit 5 는 메소드에 접근제어자(public)을 생략해도된다.
     @Test
     void addAndGet() throws SQLException, ClassNotFoundException {
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DaoFactory.class);
-        UserDao userDao = context.getBean("userDao", UserDao.class);
-
         userDao.deleteAll();
         assertEquals(userDao.getCount(), 0);
-
-        User user1 = new User("gildong1", "홍길동1", "1001");
-        User user2 = new User("gildong2", "홍길동2", "1002");
 
         userDao.add(user1);
         userDao.add(user2);
@@ -39,12 +49,6 @@ class UserDaoTest {
 
     @Test
     void count() throws SQLException, ClassNotFoundException {
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DaoFactory.class);
-        UserDao userDao = context.getBean("userDao", UserDao.class);
-        User user1 = new User("user1", "kim", "1001");
-        User user2 = new User("user2", "kim", "1002");
-        User user3 = new User("user3", "kim", "1003");
-
         userDao.deleteAll();
         assertEquals(userDao.getCount(), 0);
 
@@ -60,9 +64,6 @@ class UserDaoTest {
 
     @Test
     void get_exception() {
-        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(DaoFactory.class);
-        UserDao userDao = context.getBean("userDao", UserDao.class);
-
         assertThatThrownBy(() -> userDao.get("unknown"))
                 .isInstanceOf(EmptyResultDataAccessException.class);
     }
