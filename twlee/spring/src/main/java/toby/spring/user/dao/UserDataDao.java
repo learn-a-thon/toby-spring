@@ -1,5 +1,6 @@
 package toby.spring.user.dao;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import toby.spring.user.domain.User;
 
 import javax.sql.DataSource;
@@ -32,16 +33,21 @@ public class UserDataDao {
         ps.setString(1, id);
 
         ResultSet rs = ps.executeQuery();
-        rs.next();
-        User user = new User();
-        user.setId(rs.getString("id"));
-        user.setName(rs.getString("name"));
-        user.setPassword(rs.getString("password"));
+        User user = null;
+        if (rs.next()) {
+            user = new User();
+            user.setId(rs.getString("id"));
+            user.setName(rs.getString("name"));
+            user.setPassword(rs.getString("password"));
+        }
 
         rs.close();
         ps.close();
         conn.close();
-
+        // 조회된 데이터가 없으면 Exception
+        if (user == null) {
+            throw new EmptyResultDataAccessException(1);
+        }
         return user;
     }
 
