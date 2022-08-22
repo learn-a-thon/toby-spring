@@ -45,6 +45,32 @@ public class UserDataDao {
         return user;
     }
 
+    public int getCount() throws ClassNotFoundException, SQLException {
+        Connection conn = dataSource.getConnection();
+
+        PreparedStatement ps = conn.prepareStatement("select count(*) from users");
+
+        ResultSet rs = ps.executeQuery();
+        rs.next();
+        int count = rs.getInt(1);
+
+        rs.close();
+        ps.close();
+        conn.close();
+
+        return count;
+    }
+
+    public void deleteAll() throws ClassNotFoundException, SQLException {
+        Connection conn = dataSource.getConnection();
+
+        PreparedStatement ps = conn.prepareStatement("delete from users");
+        ps.executeUpdate();
+
+        ps.close();
+        conn.close();
+    }
+
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
     }
