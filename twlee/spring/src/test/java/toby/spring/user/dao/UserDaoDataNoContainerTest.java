@@ -2,23 +2,18 @@ package toby.spring.user.dao;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import toby.spring.user.domain.User;
 
+import javax.sql.DataSource;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@SpringBootTest
-@ContextConfiguration(locations = "/applicationContext.xml")
-class UserDaoTest {
-
-    @Autowired
-    private UserDao userDao;
+class UserDaoDataNoContainerTest {
+    private UserDataDao userDao;
 
     private User user1;
     private User user2;
@@ -26,6 +21,10 @@ class UserDaoTest {
 
     @BeforeEach
     void setUp() {
+        userDao = new UserDataDao();
+        DataSource dataSource = new SingleConnectionDataSource("jdbc:h2:tcp://localhost/~/test", "sa", "", true);
+        userDao.setDataSource(dataSource);
+
         user1 = new User("gildong1", "홍길동1", "1001");
         user2 = new User("gildong2", "홍길동2", "1002");
         user3 = new User("gildong3", "홍길동3", "1003");
