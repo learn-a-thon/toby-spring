@@ -87,13 +87,16 @@ public class UserDataDao {
         return 0;
     }
 
-    public void deleteAll() throws ClassNotFoundException, SQLException {
+    public void deleteAll() throws SQLException {
+        jdbcContextWithStatementStrategy(new DeleteAllStatement());
+    }
+
+    public void jdbcContextWithStatementStrategy(StatementStrategy stmt) throws SQLException {
         Connection conn = null;
         PreparedStatement ps = null;
         try {
             conn = dataSource.getConnection();
-            ps = conn.prepareStatement("delete from users");
-            ps.executeUpdate();
+            stmt.makePreparedStatement(conn);
         } catch (SQLException e) {
             throw e;
         } finally {
