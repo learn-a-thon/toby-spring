@@ -52,29 +52,64 @@ public class UserDataDao {
     }
 
     public int getCount() throws ClassNotFoundException, SQLException {
-        Connection conn = dataSource.getConnection();
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = dataSource.getConnection();
 
-        PreparedStatement ps = conn.prepareStatement("select count(*) from users");
+            ps = conn.prepareStatement("select count(*) from users");
 
-        ResultSet rs = ps.executeQuery();
-        rs.next();
-        int count = rs.getInt(1);
-
-        rs.close();
-        ps.close();
-        conn.close();
-
-        return count;
+            rs = ps.executeQuery();
+            rs.next();
+            int count = rs.getInt(1);
+            return count;
+        } catch (SQLException e) {
+            if (rs != null) {
+                try {
+                    rs.close();
+                } catch (SQLException e1) {
+                }
+            }
+            if (rs != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e1) {
+                }
+            }
+            if (rs != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e1) {
+                }
+            }
+        }
+        return 0;
     }
 
     public void deleteAll() throws ClassNotFoundException, SQLException {
-        Connection conn = dataSource.getConnection();
-
-        PreparedStatement ps = conn.prepareStatement("delete from users");
-        ps.executeUpdate();
-
-        ps.close();
-        conn.close();
+        Connection conn = null;
+        PreparedStatement ps = null;
+        try {
+            conn = dataSource.getConnection();
+            ps = conn.prepareStatement("delete from users");
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw e;
+        } finally {
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
     }
 
     public void setDataSource(DataSource dataSource) {
