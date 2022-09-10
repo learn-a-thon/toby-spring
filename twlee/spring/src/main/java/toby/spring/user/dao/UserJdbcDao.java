@@ -9,7 +9,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class UserDataDao {
+public class UserJdbcDao {
+    private JdbcContext jdbcContext;
     private DataSource dataSource;
 
     public void add(final User user) throws SQLException {
@@ -21,7 +22,7 @@ public class UserDataDao {
             ps.executeUpdate();
             return ps;
         };
-        jdbcContextWithStatementStrategy(st);
+        jdbcContext.workWithStatementStrategy(st);
     }
 
     public User get(String id) throws SQLException {
@@ -86,7 +87,7 @@ public class UserDataDao {
     }
 
     public void deleteAll() throws SQLException {
-        jdbcContextWithStatementStrategy(conn -> {
+        jdbcContext.workWithStatementStrategy(conn -> {
                 PreparedStatement ps = conn.prepareStatement("delete from users");
                 ps.executeUpdate();
                 return ps;
@@ -94,31 +95,11 @@ public class UserDataDao {
         );
     }
 
-    public void jdbcContextWithStatementStrategy(StatementStrategy stmt) throws SQLException {
-        Connection conn = null;
-        PreparedStatement ps = null;
-        try {
-            conn = dataSource.getConnection();
-            stmt.makePreparedStatement(conn);
-        } catch (SQLException e) {
-            throw e;
-        } finally {
-            if (ps != null) {
-                try {
-                    ps.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                }
-            }
-        }
-    }
-
     public void setDataSource(DataSource dataSource) {
         this.dataSource = dataSource;
+    }
+
+    public void setJdbcContext(JdbcContext jdbcContext) {
+        this.jdbcContext = jdbcContext;
     }
 }
