@@ -12,21 +12,22 @@ import java.sql.SQLException;
 public class UserDataDao {
     private DataSource dataSource;
 
-    public void add(User user) throws ClassNotFoundException, SQLException {
-        Connection conn = dataSource.getConnection();
-
-        PreparedStatement ps = conn.prepareStatement("insert into users (id, name, password) values (?, ?, ?)");
-        ps.setString(1, user.getId());
-        ps.setString(2, user.getName());
-        ps.setString(3, user.getPassword());
-
-        ps.executeUpdate();
-
-        ps.close();
-        conn.close();
+    public void add(final User user) throws SQLException {
+        class AddStatement implements StatementStrategy {
+            @Override
+            public PreparedStatement makePreparedStatement(Connection conn) throws SQLException {
+                PreparedStatement ps = conn.prepareStatement("insert into users (id, name, password) values (?, ?, ?)");
+                ps.setString(1, user.getId());
+                ps.setString(2, user.getName());
+                ps.setString(3, user.getPassword());
+                return ps;
+            }
+        }
+        AddStatement st = new AddStatement();
+        jdbcContextWithStatementStrategy(st);
     }
 
-    public User get(String id) throws ClassNotFoundException, SQLException {
+    public User get(String id) throws SQLException {
         Connection conn = dataSource.getConnection();
 
         PreparedStatement ps = conn.prepareStatement("select * from users where id = ?");
@@ -51,7 +52,7 @@ public class UserDataDao {
         return user;
     }
 
-    public int getCount() throws ClassNotFoundException, SQLException {
+    public int getCount() {
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
