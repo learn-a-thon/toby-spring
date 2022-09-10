@@ -21,7 +21,6 @@
     </bean>
 
     <bean id="userJdbcDao" class="toby.spring.user.dao.UserJdbcDao">
-        <property name="jdbcContext" ref="jdbcContext" />
         <property name="dataSource" ref="dataSource" />
     </bean>
 </beans>

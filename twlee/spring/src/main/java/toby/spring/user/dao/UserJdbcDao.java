@@ -96,10 +96,8 @@ public class UserJdbcDao {
     }
 
     public void setDataSource(DataSource dataSource) {
+        this.jdbcContext = new JdbcContext();
+        jdbcContext.setDataSource(dataSource);
         this.dataSource = dataSource;
-    }
-
-    public void setJdbcContext(JdbcContext jdbcContext) {
-        this.jdbcContext = jdbcContext;
     }
 }
