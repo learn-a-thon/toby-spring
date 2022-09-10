@@ -13,17 +13,13 @@ public class UserDataDao {
     private DataSource dataSource;
 
     public void add(final User user) throws SQLException {
-        class AddStatement implements StatementStrategy {
-            @Override
-            public PreparedStatement makePreparedStatement(Connection conn) throws SQLException {
-                PreparedStatement ps = conn.prepareStatement("insert into users (id, name, password) values (?, ?, ?)");
-                ps.setString(1, user.getId());
-                ps.setString(2, user.getName());
-                ps.setString(3, user.getPassword());
-                return ps;
-            }
-        }
-        AddStatement st = new AddStatement();
+        StatementStrategy st = conn -> {
+            PreparedStatement ps = conn.prepareStatement("insert into users (id, name, password) values (?, ?, ?)");
+            ps.setString(1, user.getId());
+            ps.setString(2, user.getName());
+            ps.setString(3, user.getPassword());
+            return ps;
+        };
         jdbcContextWithStatementStrategy(st);
     }
 
@@ -89,7 +85,11 @@ public class UserDataDao {
     }
 
     public void deleteAll() throws SQLException {
-        jdbcContextWithStatementStrategy(new DeleteAllStatement());
+        jdbcContextWithStatementStrategy(conn -> {
+                PreparedStatement ps = conn.prepareStatement("delete from users");
+                return ps;
+            }
+        );
     }
 
     public void jdbcContextWithStatementStrategy(StatementStrategy stmt) throws SQLException {
