@@ -20,7 +20,8 @@ public class JdbcContext {
         PreparedStatement ps = null;
         try {
             conn = dataSource.getConnection();
-            stmt.makePreparedStatement(conn);
+            ps = stmt.makePreparedStatement(conn);
+            ps.executeUpdate();
         } catch (SQLException e) {
             throw e;
         } finally {
