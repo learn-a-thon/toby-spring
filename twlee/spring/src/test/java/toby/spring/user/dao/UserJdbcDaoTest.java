@@ -17,10 +17,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 @ContextConfiguration(locations = "/test-applicationContext.xml")
-class UserDaoDataTest {
+class UserJdbcDaoTest {
 
     @Autowired
-    private UserDataDao userDao;
+    private UserJdbcDao userJdbcDao;
 
     private User user1;
     private User user2;
@@ -29,7 +29,7 @@ class UserDaoDataTest {
     @BeforeEach
     void setUp() {
         DataSource dataSource = new SingleConnectionDataSource("jdbc:h2:tcp://localhost/~/test", "sa", "", true);
-        userDao.setDataSource(dataSource);
+        userJdbcDao.setDataSource(dataSource);
 
         user1 = new User("gildong1", "홍길동1", "1001");
         user2 = new User("gildong2", "홍길동2", "1002");
@@ -39,40 +39,40 @@ class UserDaoDataTest {
     //junit 5 는 메소드에 접근제어자(public)을 생략해도된다.
     @Test
     void addAndGet() throws SQLException, ClassNotFoundException {
-        userDao.deleteAll();
-        assertEquals(userDao.getCount(), 0);
+        userJdbcDao.deleteAll();
+        assertEquals(userJdbcDao.getCount(), 0);
 
-        userDao.add(user1);
-        userDao.add(user2);
-        assertEquals(userDao.getCount(), 2);
+        userJdbcDao.add(user1);
+        userJdbcDao.add(user2);
+        assertEquals(userJdbcDao.getCount(), 2);
 
-        User findUser1 = userDao.get(user1.getId());
+        User findUser1 = userJdbcDao.get(user1.getId());
         assertEquals(user1.getName(), findUser1.getName());
         assertEquals(user1.getPassword(), findUser1.getPassword());
 
-        User findUser2 = userDao.get(user2.getId());
+        User findUser2 = userJdbcDao.get(user2.getId());
         assertEquals(user2.getName(), findUser2.getName());
         assertEquals(user2.getPassword(), findUser2.getPassword());
     }
 
     @Test
     void count() throws SQLException, ClassNotFoundException {
-        userDao.deleteAll();
-        assertEquals(userDao.getCount(), 0);
+        userJdbcDao.deleteAll();
+        assertEquals(userJdbcDao.getCount(), 0);
 
-        userDao.add(user1);
-        assertEquals(userDao.getCount(), 1);
+        userJdbcDao.add(user1);
+        assertEquals(userJdbcDao.getCount(), 1);
 
-        userDao.add(user2);
-        assertEquals(userDao.getCount(), 2);
+        userJdbcDao.add(user2);
+        assertEquals(userJdbcDao.getCount(), 2);
 
-        userDao.add(user3);
-        assertEquals(userDao.getCount(), 3);
+        userJdbcDao.add(user3);
+        assertEquals(userJdbcDao.getCount(), 3);
     }
 
     @Test
     void get_exception() {
-        assertThatThrownBy(() -> userDao.get("unknown"))
+        assertThatThrownBy(() -> userJdbcDao.get("unknown"))
                 .isInstanceOf(EmptyResultDataAccessException.class);
     }
 }
