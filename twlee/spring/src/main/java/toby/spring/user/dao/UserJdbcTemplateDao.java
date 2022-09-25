@@ -4,6 +4,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import toby.spring.user.domain.User;
+import toby.spring.user.exception.DuplicateUserIdException;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -18,7 +19,19 @@ public class UserJdbcTemplateDao implements UserDao {
         return user;
     };
 
-    public void add(final User user) throws DuplicateKeyException {
+    public void add(final User user) {
+        try {
+            jdbcTemplate.update(
+                    "insert into users (id, name, password) values (?, ?, ?)",
+                    user.getId(),
+                    user.getName(),
+                    user.getPassword());
+        } catch (DuplicateKeyException e) {
+            throw new DuplicateUserIdException(e); // 예외 전환
+        }
+    }
+
+    public void add_exception(final User user) throws DuplicateKeyException {
         jdbcTemplate.update(
                 "insert into users (id, name, password) values (?, ?, ?)",
                 user.getId(),

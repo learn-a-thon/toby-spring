@@ -7,6 +7,8 @@ import java.util.List;
 public interface UserDao {
     void add(User user);
 
+    void add_exception(User user);
+
     User get(String id);
 
     List<User> getAll();
