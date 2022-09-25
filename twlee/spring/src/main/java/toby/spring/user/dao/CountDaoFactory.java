@@ -7,8 +7,8 @@ import org.springframework.context.annotation.Configuration;
 public class CountDaoFactory {
 
     @Bean
-    public UserDao userDao() {
-        return new UserDao(connectionMaker());
+    public UserStupidDao userDao() {
+        return new UserStupidDao(connectionMaker());
     }
 
     @Bean
