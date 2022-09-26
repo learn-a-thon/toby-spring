@@ -1,7 +1,9 @@
 package toby.spring.user.dao;
 
+import org.h2.api.ErrorCode;
 import org.springframework.dao.EmptyResultDataAccessException;
 import toby.spring.user.domain.User;
+import toby.spring.user.exception.DuplicateUserIdException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -13,16 +15,24 @@ public class UserJdbcDao {
     private JdbcContext jdbcContext;
     private DataSource dataSource;
 
-    public void add(final User user) throws SQLException {
-        StatementStrategy st = conn -> {
-            PreparedStatement ps = conn.prepareStatement("insert into users (id, name, password) values (?, ?, ?)");
-            ps.setString(1, user.getId());
-            ps.setString(2, user.getName());
-            ps.setString(3, user.getPassword());
-            ps.executeUpdate();
-            return ps;
-        };
-        jdbcContext.workWithStatementStrategy(st);
+    public void add(final User user) throws DuplicateUserIdException {
+        try {
+            StatementStrategy st = conn -> {
+                PreparedStatement ps = conn.prepareStatement("insert into users (id, name, password) values (?, ?, ?)");
+                ps.setString(1, user.getId());
+                ps.setString(2, user.getName());
+                ps.setString(3, user.getPassword());
+                ps.executeUpdate();
+                return ps;
+            };
+            jdbcContext.workWithStatementStrategy(st);
+        } catch (SQLException e) {
+            if (e.getErrorCode() == ErrorCode.DUPLICATE_KEY_1) {
+                throw new DuplicateUserIdException(e); // 예외 전환
+            } else {
+                throw new RuntimeException(e); // 예외 포장
+            }
+        }
     }
 
     public User get(String id) throws SQLException {

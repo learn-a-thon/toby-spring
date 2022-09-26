@@ -4,15 +4,18 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
+import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import org.springframework.test.context.ContextConfiguration;
 import toby.spring.user.domain.User;
+import toby.spring.user.exception.DuplicateUserIdException;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -21,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class UserJdbcTemplateDaoTest {
 
     @Autowired
-    private UserJdbcTemplateDao userJdbcTemplateDao;
+    private UserDao userJdbcTemplateDao;
 
     private User user1;
     private User user2;
@@ -29,9 +32,6 @@ class UserJdbcTemplateDaoTest {
 
     @BeforeEach
     void setUp() {
-        DataSource dataSource = new SingleConnectionDataSource("jdbc:h2:tcp://localhost/~/test", "sa", "", true);
-        userJdbcTemplateDao.setDataSource(dataSource);
-
         user1 = new User("gildong1", "홍길동1", "1001");
         user2 = new User("gildong2", "홍길동2", "1002");
         user3 = new User("gildong3", "홍길동3", "1003");
@@ -39,7 +39,7 @@ class UserJdbcTemplateDaoTest {
 
     //junit 5 는 메소드에 접근제어자(public)을 생략해도된다.
     @Test
-    void addAndGet() throws SQLException, ClassNotFoundException {
+    void addAndGet() {
         userJdbcTemplateDao.deleteAll();
         assertEquals(userJdbcTemplateDao.getCount(), 0);
 
@@ -57,7 +57,7 @@ class UserJdbcTemplateDaoTest {
     }
 
     @Test
-    void count() throws SQLException, ClassNotFoundException {
+    void count() {
         userJdbcTemplateDao.deleteAll();
         assertEquals(userJdbcTemplateDao.getCount(), 0);
 
@@ -78,7 +78,7 @@ class UserJdbcTemplateDaoTest {
     }
 
     @Test
-    void getAll() throws SQLException {
+    void getAll() {
         userJdbcTemplateDao.deleteAll();
         List<User> emptyList = userJdbcTemplateDao.getAll();
         assertEquals(emptyList.size(), 0);
@@ -93,6 +93,31 @@ class UserJdbcTemplateDaoTest {
         checkSameUser(user1, userList.get(0));
         checkSameUser(user2, userList.get(1));
         checkSameUser(user3, userList.get(2));
+    }
+
+    @Test
+    void add_exception() {
+        userJdbcTemplateDao.deleteAll();
+
+        userJdbcTemplateDao.add(user1);
+        assertThatThrownBy(() -> userJdbcTemplateDao.add(user1))
+                .isInstanceOf(DuplicateUserIdException.class);
+    }
+
+    @Autowired
+    DataSource dataSource;
+
+    @Test
+    void sqlExceptionTranslate() {
+        userJdbcTemplateDao.deleteAll();
+        try {
+            userJdbcTemplateDao.add_exception(user1);
+            userJdbcTemplateDao.add_exception(user1);
+        } catch (DuplicateKeyException e) {
+            SQLException sqlEx = (SQLException) e.getRootCause();
+            SQLErrorCodeSQLExceptionTranslator set = new SQLErrorCodeSQLExceptionTranslator(this.dataSource);
+            assertThat(set.translate(null, null, sqlEx)).isInstanceOf(DuplicateKeyException.class);
+        }
     }
 
     private void checkSameUser(User expect, User actual) {
