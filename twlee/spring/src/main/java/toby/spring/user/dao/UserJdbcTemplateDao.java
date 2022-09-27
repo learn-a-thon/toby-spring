@@ -1,31 +1,43 @@
 package toby.spring.user.dao;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Component;
+import toby.spring.user.domain.Level;
 import toby.spring.user.domain.User;
 import toby.spring.user.exception.DuplicateUserIdException;
 
 import javax.sql.DataSource;
 import java.util.List;
 
+@Component
 public class UserJdbcTemplateDao implements UserDao {
+    @Autowired
     private JdbcTemplate jdbcTemplate;
+
     private RowMapper<User> userRowMapper = (rs, rowNum) -> {
         User user = new User();
         user.setId(rs.getString("id"));
         user.setName(rs.getString("name"));
         user.setPassword(rs.getString("password"));
+        user.setLevel(Level.valueOf(rs.getInt("level")));
+        user.setLogin(rs.getInt("login"));
+        user.setRecommend(rs.getInt("recommend"));
         return user;
     };
 
     public void add(final User user) {
         try {
             jdbcTemplate.update(
-                    "insert into users (id, name, password) values (?, ?, ?)",
+                    "insert into users (id, name, password, level, login, recommend) values (?, ?, ?, ?, ?, ?)",
                     user.getId(),
                     user.getName(),
-                    user.getPassword());
+                    user.getPassword(),
+                    user.getLevel().intValue(),
+                    user.getLogin(),
+                    user.getRecommend());
         } catch (DuplicateKeyException e) {
             throw new DuplicateUserIdException(e); // 예외 전환
         }
@@ -33,10 +45,13 @@ public class UserJdbcTemplateDao implements UserDao {
 
     public void add_exception(final User user) throws DuplicateKeyException {
         jdbcTemplate.update(
-                "insert into users (id, name, password) values (?, ?, ?)",
+                "insert into users (id, name, password, level, login, recommend) values (?, ?, ?, ?, ?, ?)",
                 user.getId(),
                 user.getName(),
-                user.getPassword());
+                user.getPassword(),
+                user.getLevel().intValue(),
+                user.getLogin(),
+                user.getRecommend());
     }
 
     public User get(String id) {
@@ -56,9 +71,28 @@ public class UserJdbcTemplateDao implements UserDao {
         jdbcTemplate.update("delete from users");
     }
 
-
     public List<User> getAll() {
         return jdbcTemplate.query("select * from users order by id", userRowMapper);
+    }
+
+    public void update(User user) {
+        int result = jdbcTemplate.update(
+                "update users set " +
+                        "name = ?, " +
+                        "password = ?, " +
+                        "level = ?, " +
+                        "login = ?, " +
+                        "recommend = ? " +
+                        "where id = ?",
+                user.getName(),
+                user.getPassword(),
+                user.getLevel().intValue(),
+                user.getLogin(),
+                user.getRecommend(),
+                user.getId());
+        if (result != 1) {
+            throw new RuntimeException("수정 실패");
+        }
     }
 
     public void setDataSource(DataSource dataSource) {

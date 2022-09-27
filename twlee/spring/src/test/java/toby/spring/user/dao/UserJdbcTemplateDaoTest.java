@@ -8,6 +8,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import org.springframework.test.context.ContextConfiguration;
+import toby.spring.user.domain.Level;
 import toby.spring.user.domain.User;
 import toby.spring.user.exception.DuplicateUserIdException;
 
@@ -18,6 +19,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static toby.spring.user.UserFixture.*;
 
 @SpringBootTest
 @ContextConfiguration(locations = "/test-applicationContext.xml")
@@ -32,9 +34,9 @@ class UserJdbcTemplateDaoTest {
 
     @BeforeEach
     void setUp() {
-        user1 = new User("gildong1", "홍길동1", "1001");
-        user2 = new User("gildong2", "홍길동2", "1002");
-        user3 = new User("gildong3", "홍길동3", "1003");
+        user1 = USER1;
+        user2 = USER2;
+        user3 = USER3;
     }
 
     //junit 5 는 메소드에 접근제어자(public)을 생략해도된다.
@@ -48,12 +50,10 @@ class UserJdbcTemplateDaoTest {
         assertEquals(userJdbcTemplateDao.getCount(), 2);
 
         User findUser1 = userJdbcTemplateDao.get(user1.getId());
-        assertEquals(user1.getName(), findUser1.getName());
-        assertEquals(user1.getPassword(), findUser1.getPassword());
+        checkSameUser(user1, findUser1);
 
         User findUser2 = userJdbcTemplateDao.get(user2.getId());
-        assertEquals(user2.getName(), findUser2.getName());
-        assertEquals(user2.getPassword(), findUser2.getPassword());
+        checkSameUser(user2, findUser2);
     }
 
     @Test
@@ -120,9 +120,30 @@ class UserJdbcTemplateDaoTest {
         }
     }
 
+    @Test
+    void update() {
+        userJdbcTemplateDao.deleteAll();
+
+        userJdbcTemplateDao.add(user1);
+
+        user1.setName("나는홍길동");
+        user1.setPassword("9999");
+        user1.setLevel(Level.GOLD);
+        user1.setLogin(1000);
+        user1.setRecommend(999);
+
+        userJdbcTemplateDao.update(user1);
+
+        User findUser1 = userJdbcTemplateDao.get(user1.getId());
+        checkSameUser(user1, findUser1);
+    }
+
     private void checkSameUser(User expect, User actual) {
         assertEquals(expect.getId(), actual.getId());
         assertEquals(expect.getName(), actual.getName());
         assertEquals(expect.getPassword(), actual.getPassword());
+        assertEquals(expect.getLevel(), actual.getLevel());
+        assertEquals(expect.getLogin(), actual.getLogin());
+        assertEquals(expect.getRecommend(), actual.getRecommend());
     }
 }
