@@ -44,14 +44,41 @@ class UserServiceTest {
         }
         userService.upgradeLevels();
 
-        checkLevel(userList.get(0), Level.BASIC);
-        checkLevel(userList.get(1), Level.SILVER);
-        checkLevel(userList.get(2), Level.SILVER);
-        checkLevel(userList.get(3), Level.GOLD);
+        checkLevelUpgraded(userList.get(0), false);
+        checkLevelUpgraded(userList.get(1), false);
+        checkLevelUpgraded(userList.get(2), false);
+        checkLevelUpgraded(userList.get(3), true);
     }
 
     private void checkLevel(User expect, Level level) {
         User user = userDao.get(expect.getId());
         assertEquals(user.getLevel(), level);
+    }
+
+    @Test
+    void add() {
+        userDao.deleteAll();
+
+        User userWithLevel = userList.get(3);
+        User userWithoutLevel = userList.get(0);
+        userWithoutLevel.setLevel(null);
+
+        userService.add(userWithLevel);
+        userService.add(userWithoutLevel);
+
+        User userWithLevelRead = userDao.get(userWithLevel.getId());
+        User userWithoutLevelRead = userDao.get(userWithoutLevel.getId());
+
+        assertThat(userWithLevelRead.getLevel()).isEqualTo(userWithLevel.getLevel());
+        assertThat(userWithoutLevelRead.getLevel()).isEqualTo(Level.BASIC);
+    }
+
+    private void checkLevelUpgraded(User user, boolean upgraded) {
+        User userUpgrade = userDao.get(user.getId());
+        if (upgraded) {
+            assertThat(userUpgrade.getLevel()).isEqualTo(user.getLevel().getNext());
+        } else {
+            assertThat(userUpgrade.getLevel()).isEqualTo(user.getLevel());
+        }
     }
 }
