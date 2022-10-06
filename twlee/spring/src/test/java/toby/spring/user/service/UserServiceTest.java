@@ -8,6 +8,7 @@ import toby.spring.user.dao.UserDao;
 import toby.spring.user.domain.Level;
 import toby.spring.user.domain.User;
 
+import javax.sql.DataSource;
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,6 +24,9 @@ class UserServiceTest {
 
     @Autowired
     private UserDao userDao;
+
+    @Autowired
+    private DataSource dataSource;
 
     private List<User> userList;
 
@@ -80,5 +84,61 @@ class UserServiceTest {
         } else {
             assertThat(userUpgrade.getLevel()).isEqualTo(user.getLevel());
         }
+    }
+
+    @Test
+    void upgradeAllOrNothing_fail() {
+        UserService testUserService = new TestUserService(userDao, dataSource, userList.get(3).getId());
+        userDao.deleteAll();
+        for (User user : userList) {
+            userDao.add(user);
+        }
+        try {
+            testUserService.upgradeLevels();
+        } catch (TestUserServiceException e) {
+            System.out.println("error occur!");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        checkLevelUpgraded(userList.get(2), false);
+    }
+
+    @Test
+    void upgradeAllOrNothingSyncTransaction() {
+        UserService testUserService = new TestUserService(userDao, dataSource, userList.get(3).getId());
+        userDao.deleteAll();
+        for (User user : userList) {
+            userDao.add(user);
+        }
+        try {
+            testUserService.upgradeLevelsSyncTransaction();
+        } catch (TestUserServiceException e) {
+            System.out.println("error occur!");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        checkLevelUpgraded(userList.get(2), false);
+    }
+
+    static class TestUserService extends UserService {
+        private String id;
+
+        public TestUserService(UserDao userDao, DataSource dataSource) {
+            super(userDao, dataSource);
+        }
+
+        public TestUserService(UserDao userDao, DataSource dataSource, String id) {
+            super(userDao, dataSource);
+            this.id = id;
+        }
+
+        @Override
+        protected void upgradeLevel(User user) {
+            if (user.getId().equals(this.id)) throw new TestUserServiceException();
+            super.upgradeLevel(user);
+        }
+    }
+
+    static class TestUserServiceException extends RuntimeException {
     }
 }
