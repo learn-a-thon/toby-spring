@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mail.MailSender;
 import toby.spring.user.dao.UserDao;
 import toby.spring.user.domain.Level;
 import toby.spring.user.domain.User;
@@ -27,6 +28,9 @@ class UserServiceTest {
 
     @Autowired
     private DataSource dataSource;
+
+    @Autowired
+    private DummyMailSender mailSender;
 
     private List<User> userList;
 
@@ -88,7 +92,7 @@ class UserServiceTest {
 
     @Test
     void upgradeAllOrNothing_fail() {
-        UserService testUserService = new TestUserService(userDao, dataSource, userList.get(3).getId());
+        UserService testUserService = new TestUserService(userDao, dataSource, mailSender, userList.get(3).getId());
         userDao.deleteAll();
         for (User user : userList) {
             userDao.add(user);
@@ -105,7 +109,7 @@ class UserServiceTest {
 
     @Test
     void upgradeAllOrNothingSyncTransaction() {
-        UserService testUserService = new TestUserService(userDao, dataSource, userList.get(3).getId());
+        UserService testUserService = new TestUserService(userDao, dataSource, mailSender, userList.get(3).getId());
         userDao.deleteAll();
         for (User user : userList) {
             userDao.add(user);
@@ -123,12 +127,12 @@ class UserServiceTest {
     static class TestUserService extends UserService {
         private String id;
 
-        public TestUserService(UserDao userDao, DataSource dataSource) {
-            super(userDao, dataSource);
+        public TestUserService(UserDao userDao, DataSource dataSource, MailSender mailSender) {
+            super(userDao, dataSource, mailSender);
         }
 
-        public TestUserService(UserDao userDao, DataSource dataSource, String id) {
-            super(userDao, dataSource);
+        public TestUserService(UserDao userDao, DataSource dataSource, MailSender mailSender, String id) {
+            super(userDao, dataSource, mailSender);
             this.id = id;
         }
 

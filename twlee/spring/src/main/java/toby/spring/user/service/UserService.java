@@ -2,6 +2,8 @@ package toby.spring.user.service;
 
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.jdbc.datasource.DataSourceUtils;
+import org.springframework.mail.MailSender;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -22,10 +24,12 @@ public class UserService {
 
     private final UserDao userDao;
     private final DataSource dataSource;
+    private final MailSender dummyMailSender;
 
-    public UserService(UserDao userDao, DataSource dataSource) {
+    public UserService(UserDao userDao, DataSource dataSource, MailSender dummyMailSender) {
         this.userDao = userDao;
         this.dataSource = dataSource;
+        this.dummyMailSender = dummyMailSender;
     }
 
     public void upgradeLevels() {
@@ -80,6 +84,17 @@ public class UserService {
     protected void upgradeLevel(User user) {
         user.upgradeLevel();
         userDao.update(user);
+        sendUpgradeMail(user);
+    }
+
+    private void sendUpgradeMail(User user) {
+        SimpleMailMessage simpleMailMessage = new SimpleMailMessage();
+        simpleMailMessage.setTo(user.getEmail());
+        simpleMailMessage.setFrom("admin");
+        simpleMailMessage.setSubject("Upgrade 안내");
+        simpleMailMessage.setText("사용자님의 등급이 " + user.getLevel().name());
+
+        dummyMailSender.send(simpleMailMessage);
     }
 
     private boolean canUpgradeLevel(User user) {
