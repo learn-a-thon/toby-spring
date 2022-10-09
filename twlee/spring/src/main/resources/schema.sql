@@ -9,3 +9,4 @@ create table users (
 alter table users add level integer not null default 1 ;
 alter table users add login integer not null default 0 ;
 alter table users add recommend integer not null default 0 ;
+alter table users add email varchar(30) not null ;
