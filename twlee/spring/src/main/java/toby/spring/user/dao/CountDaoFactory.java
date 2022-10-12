@@ -1,22 +1,21 @@
 package toby.spring.user.dao;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class CountDaoFactory {
 
-    @Bean
+//    @Bean
     public UserStupidDao userDao() {
         return new UserStupidDao(connectionMaker());
     }
 
-    @Bean
+//    @Bean
     public ConnectionMaker connectionMaker() {
         return new CountingConnectionMaker(realConnectionMaker());
     }
 
-    @Bean
+//    @Bean
     public ConnectionMaker realConnectionMaker() {
         return new DConnectionMaker();
     }

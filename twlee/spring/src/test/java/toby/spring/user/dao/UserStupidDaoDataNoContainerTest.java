@@ -11,6 +11,7 @@ import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static toby.spring.user.UserFixture.*;
 
 class UserStupidDaoDataNoContainerTest {
     private UserDataDao userDao;
@@ -25,9 +26,9 @@ class UserStupidDaoDataNoContainerTest {
         DataSource dataSource = new SingleConnectionDataSource("jdbc:h2:tcp://localhost/~/test", "sa", "", true);
         userDao.setDataSource(dataSource);
 
-        user1 = new User("gildong1", "홍길동1", "1001");
-        user2 = new User("gildong2", "홍길동2", "1002");
-        user3 = new User("gildong3", "홍길동3", "1003");
+        user1 = USER1;
+        user2 = USER2;
+        user3 = USER3;
     }
 
     //junit 5 는 메소드에 접근제어자(public)을 생략해도된다.

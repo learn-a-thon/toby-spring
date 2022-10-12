@@ -1,6 +1,5 @@
 package toby.spring.user.dao;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 
@@ -9,7 +8,7 @@ import javax.sql.DataSource;
 @Configuration
 public class DataFactory {
 
-    @Bean
+//    @Bean
     public UserDataDao userDataDao() {
         UserDataDao userDao = new UserDataDao();
         userDao.setDataSource(dataSource());
@@ -17,7 +16,7 @@ public class DataFactory {
 
     }
 
-    @Bean
+//    @Bean
     public DataSource dataSource() {
         SimpleDriverDataSource dataSource = new SimpleDriverDataSource();
         dataSource.setDriverClass(org.h2.Driver.class);
