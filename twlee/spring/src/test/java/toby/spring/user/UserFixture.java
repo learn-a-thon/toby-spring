@@ -3,8 +3,8 @@ package toby.spring.user;
 import toby.spring.user.domain.Level;
 import toby.spring.user.domain.User;
 
-import static toby.spring.user.service.UserService.MIN_LOGCOUNT_FOR_SILVER;
-import static toby.spring.user.service.UserService.MIN_RECOMMEND_FOR_GOLD;
+import static toby.spring.user.service.UserServiceImpl.MIN_LOGCOUNT_FOR_SILVER;
+import static toby.spring.user.service.UserServiceImpl.MIN_RECOMMEND_FOR_GOLD;
 
 public class UserFixture {
     public static final User USER1 = new User("gildong1", "홍길동1", "1001", Level.BASIC, MIN_LOGCOUNT_FOR_SILVER - 1, 0, "test1@email.co.kr");
