@@ -1,17 +1,15 @@
-package toby.spring.user.advice;
+package toby.spring.user.aop.advice;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import java.lang.reflect.InvocationTargetException;
 
-@Component
 public class TransactionAdvice implements MethodInterceptor {
-    private PlatformTransactionManager transactionManager;
+    private final PlatformTransactionManager transactionManager;
 
     public TransactionAdvice(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
@@ -31,7 +29,7 @@ public class TransactionAdvice implements MethodInterceptor {
             Object obj = invocation.proceed();
             transactionManager.commit(status);
             return obj;
-        } catch (InvocationTargetException e) {
+        } catch (Exception e) {
             transactionManager.rollback(status);
             throw e;
         }

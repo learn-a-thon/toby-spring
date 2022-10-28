@@ -1,11 +1,11 @@
-package toby.spring.user.factorybean;
+package toby.spring.user.aop.factorybean;
 
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
-import toby.spring.user.handler.TransactionHandler;
+import toby.spring.user.aop.handler.TransactionHandler;
 import toby.spring.user.service.UserService;
 
 import java.lang.reflect.Proxy;

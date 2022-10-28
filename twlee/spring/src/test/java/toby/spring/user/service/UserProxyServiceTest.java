@@ -8,13 +8,15 @@ import org.springframework.aop.support.NameMatchMethodPointcut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.PlatformTransactionManager;
-import toby.spring.user.advice.TransactionAdvice;
+import toby.spring.user.aop.advice.TransactionAdvice;
+import toby.spring.user.aop.factorybean.TxProxyFactoryBean;
+import toby.spring.user.aop.handler.TransactionHandler;
+import toby.spring.user.config.TestAppConfig;
 import toby.spring.user.dao.UserDao;
 import toby.spring.user.domain.User;
-import toby.spring.user.factorybean.TxProxyFactoryBean;
-import toby.spring.user.handler.TransactionHandler;
 
 import javax.sql.DataSource;
 import java.lang.reflect.Proxy;
@@ -22,9 +24,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static toby.spring.user.UserFixture.*;
 
 @SpringBootTest
+@Import(TestAppConfig.class)
 class UserProxyServiceTest {
     @Autowired
     private UserDao userDao;
@@ -139,6 +143,33 @@ class UserProxyServiceTest {
         }
         List<String> targets = mailSender.getTargets();
         assertThat(targets.size()).isEqualTo(2);
+    }
+
+    @Autowired
+    private UserService testUserServiceImpl;
+
+    @Test
+    void 빈후처리기_빈_조회() {
+        UserService target = context.getBean("testUserServiceImpl", UserService.class);
+        System.out.println("target = " + testUserServiceImpl);
+        System.out.println("target = " + testUserServiceImpl.getClass());
+        System.out.println("target = " + target);
+        System.out.println("target = " + target.getClass());
+    }
+
+    @Test
+    void upgradeAllOrNothing_빈후처리기() {
+        userDao.deleteAll();
+        for (User user : userList) {
+            userDao.add(user);
+        }
+        try {
+            this.testUserServiceImpl.upgradeLevels();
+            fail("exception test fail");
+        } catch (TestUserServiceImpl.TestUserServiceException e) {
+            System.out.println("exception occur!");
+        }
+        checkLevelUpgraded(userList.get(1), false);
     }
 
     private void checkLevelUpgraded(User user, boolean upgraded) {

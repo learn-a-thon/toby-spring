@@ -1,6 +1,7 @@
 package toby.spring.user.service;
 
 import org.springframework.mail.MailSender;
+import org.springframework.util.ObjectUtils;
 import toby.spring.user.dao.UserDao;
 import toby.spring.user.domain.User;
 
@@ -20,7 +21,7 @@ public class TestUserService extends UserServiceImpl {
 
     @Override
     protected void upgradeLevel(User user) {
-        if (user.getId().equals(this.id)) throw new TestUserServiceException();
+        if (user.getId().equals(ObjectUtils.isEmpty(this.id) ? "up2" : id)) throw new TestUserServiceException();
         super.upgradeLevel(user);
     }
 

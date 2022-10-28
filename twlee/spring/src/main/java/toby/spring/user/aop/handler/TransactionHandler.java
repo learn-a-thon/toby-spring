@@ -1,4 +1,4 @@
-package toby.spring.user.handler;
+package toby.spring.user.aop.handler;
 
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;

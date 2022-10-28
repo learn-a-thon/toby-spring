@@ -1,6 +1,8 @@
 package toby.spring.learningtest.jdk;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.ClassFilter;
+import org.springframework.aop.Pointcut;
 import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.NameMatchMethodPointcut;
@@ -81,5 +83,46 @@ public class DynamicProxyTest {
         assertThat(target.sayHello(name)).isEqualTo("HELLO " + name.toUpperCase());
         assertThat(target.sayHi(name)).isEqualTo("HI " + name.toUpperCase());
         assertThat(target.sayThankYou(name)).isEqualTo("Thank You " + name);
+    }
+
+    @Test
+    void classNamePointcutAdvisor() {
+        NameMatchMethodPointcut classMethodPointcut = new NameMatchMethodPointcut() {
+            @Override
+            public ClassFilter getClassFilter() {
+                return clazz -> clazz.getSimpleName().startsWith("HelloT");
+            }
+        };
+        classMethodPointcut.setMappedName("sayH*");
+
+        // 테스트
+        // 적용o
+        checkAdviced(new HelloTarget(), classMethodPointcut, true);
+
+        // 적용x
+        class HelloWorld extends HelloTarget {};
+        checkAdviced(new HelloWorld(), classMethodPointcut, false);
+
+        // 적용o
+        class HelloTSpring extends HelloTarget {};
+        checkAdviced(new HelloTSpring(), classMethodPointcut, true);
+    }
+
+    private void checkAdviced(Object target, Pointcut pointcut, boolean adviced) {
+        ProxyFactoryBean factoryBean = new ProxyFactoryBean();
+        factoryBean.setTarget(target);
+        factoryBean.addAdvisor(new DefaultPointcutAdvisor(pointcut, new UppercaseAdvice()));
+        Hello hello = (Hello) factoryBean.getObject();
+
+        String name = "Spring";
+        if (adviced) {
+            assertThat(hello.sayHello(name)).isEqualTo("HELLO " + name.toUpperCase());
+            assertThat(hello.sayHi(name)).isEqualTo("HI " + name.toUpperCase());
+            assertThat(hello.sayThankYou(name)).isEqualTo("Thank You " + name);
+        } else {
+            assertThat(hello.sayHello(name)).isEqualTo("Hello " + name);
+            assertThat(hello.sayHi(name)).isEqualTo("Hi " + name);
+            assertThat(hello.sayThankYou(name)).isEqualTo("Thank You " + name);
+        }
     }
 }
