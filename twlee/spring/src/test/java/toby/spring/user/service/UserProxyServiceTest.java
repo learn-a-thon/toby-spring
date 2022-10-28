@@ -2,11 +2,15 @@ package toby.spring.user.service;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.framework.ProxyFactoryBean;
+import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.aop.support.NameMatchMethodPointcut;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.transaction.PlatformTransactionManager;
+import toby.spring.user.advice.TransactionAdvice;
 import toby.spring.user.dao.UserDao;
 import toby.spring.user.domain.User;
 import toby.spring.user.factorybean.TxProxyFactoryBean;
@@ -110,6 +114,31 @@ class UserProxyServiceTest {
         List<String> targets = mailSender.getTargets();
         assertThat(targets.size()).isEqualTo(1);
         checkLevelUpgraded(userList.get(1), false);
+    }
+
+    @DirtiesContext
+    @Test
+    void upgradeAllOrNothing_springProxyFactoryBean() throws Exception {
+        userDao.deleteAll();
+        for (User user : userList) {
+            userDao.add(user);
+        }
+        //pointcut
+        NameMatchMethodPointcut pointcut = new NameMatchMethodPointcut();
+        pointcut.setMappedName("upgrade*");
+
+        //proxyFactoryBean
+        ProxyFactoryBean factoryBean = new ProxyFactoryBean();
+        factoryBean.addAdvisor(new DefaultPointcutAdvisor(pointcut, new TransactionAdvice(transactionManager)));
+        factoryBean.setTarget(new UserServiceImpl(userDao, dataSource, mailSender));
+        UserService userService = (UserService) factoryBean.getObject();
+        try {
+            userService.upgradeLevels();
+        } catch (Exception e) {
+            System.out.println("exception!");
+        }
+        List<String> targets = mailSender.getTargets();
+        assertThat(targets.size()).isEqualTo(2);
     }
 
     private void checkLevelUpgraded(User user, boolean upgraded) {

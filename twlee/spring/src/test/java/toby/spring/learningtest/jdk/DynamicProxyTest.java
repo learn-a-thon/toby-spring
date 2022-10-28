@@ -1,10 +1,10 @@
 package toby.spring.learningtest.jdk;
 
 import org.junit.jupiter.api.Test;
-import toby.spring.learningtest.jdk.code.Hello;
-import toby.spring.learningtest.jdk.code.HelloTarget;
-import toby.spring.learningtest.jdk.code.HelloUppercase;
-import toby.spring.learningtest.jdk.code.UppercaseHandler;
+import org.springframework.aop.framework.ProxyFactoryBean;
+import org.springframework.aop.support.DefaultPointcutAdvisor;
+import org.springframework.aop.support.NameMatchMethodPointcut;
+import toby.spring.learningtest.jdk.code.*;
 
 import java.lang.reflect.Proxy;
 
@@ -42,5 +42,44 @@ public class DynamicProxyTest {
                 new UppercaseHandler(new HelloTarget())
         );
         System.out.println(helloProxy.getClass());
+    }
+
+    @Test
+    void proxyFactoryBean() {
+        ProxyFactoryBean factoryBean = new ProxyFactoryBean();
+        // 타깃 설정
+        factoryBean.setTarget(new HelloTarget());
+        // 부가기능을 담은 어드바이스 추가, 여러 개를 추가할 수 있다.
+        factoryBean.addAdvice(new UppercaseAdvice());
+
+        String name = "Spring";
+        Hello target = (Hello) factoryBean.getObject();
+        System.out.println(target.getClass());
+
+        assertThat(target.sayHello(name)).isEqualTo("HELLO " + name.toUpperCase());
+        assertThat(target.sayHi(name)).isEqualTo("HI " + name.toUpperCase());
+        assertThat(target.sayThankYou(name)).isEqualTo("THANK YOU " + name.toUpperCase());
+    }
+
+    /**
+     * 어드바이스 + 포인트컷 학습 테스트
+     */
+    @Test
+    void pointcutAdvisor() {
+        ProxyFactoryBean factoryBean = new ProxyFactoryBean();
+        factoryBean.setTarget(new HelloTarget());
+
+        NameMatchMethodPointcut pointcut = new NameMatchMethodPointcut();
+        pointcut.setMappedName("sayH*");
+
+        factoryBean.addAdvisor(new DefaultPointcutAdvisor(pointcut, new UppercaseAdvice()));
+
+        String name = "Spring";
+        Hello target = (Hello) factoryBean.getObject();
+        System.out.println(target.getClass());
+
+        assertThat(target.sayHello(name)).isEqualTo("HELLO " + name.toUpperCase());
+        assertThat(target.sayHi(name)).isEqualTo("HI " + name.toUpperCase());
+        assertThat(target.sayThankYou(name)).isEqualTo("Thank You " + name);
     }
 }
