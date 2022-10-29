@@ -6,8 +6,6 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 
-import java.lang.reflect.InvocationTargetException;
-
 public class TransactionAdvice implements MethodInterceptor {
     private final PlatformTransactionManager transactionManager;
 
@@ -29,7 +27,7 @@ public class TransactionAdvice implements MethodInterceptor {
             Object obj = invocation.proceed();
             transactionManager.commit(status);
             return obj;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             transactionManager.rollback(status);
             throw e;
         }
