@@ -5,6 +5,7 @@ import toby.spring.user.dao.UserDao;
 import toby.spring.user.domain.User;
 
 import javax.sql.DataSource;
+import java.util.List;
 
 public class TestUserServiceImpl extends UserServiceImpl implements UserService {
 
@@ -16,6 +17,16 @@ public class TestUserServiceImpl extends UserServiceImpl implements UserService 
     protected void upgradeLevel(User user) {
         if (user.getId().equals("up2")) throw new TestUserServiceException();
         super.upgradeLevel(user);
+    }
+
+    @Override
+    public List<User> getAll() {
+        List<User> all = super.getAll();
+        System.out.println("all = " + all);
+        for (User user : all) {
+            super.update(user);
+        }
+        return null;
     }
 
     static class TestUserServiceException extends RuntimeException {

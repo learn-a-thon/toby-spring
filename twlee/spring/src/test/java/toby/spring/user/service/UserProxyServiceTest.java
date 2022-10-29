@@ -172,6 +172,16 @@ class UserProxyServiceTest {
         checkLevelUpgraded(userList.get(1), false);
     }
 
+    @Test
+    void readOnlyTransactionAttribute() {
+        userDao.deleteAll();
+        for (User user : userList) {
+            userDao.add(user);
+        }
+
+        testUserServiceImpl.getAll();
+    }
+
     private void checkLevelUpgraded(User user, boolean upgraded) {
         User userUpgrade = userDao.get(user.getId());
         if (upgraded) {
