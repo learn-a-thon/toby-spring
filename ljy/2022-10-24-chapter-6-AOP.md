@@ -884,3 +884,118 @@ public void readOnlyTransactionAttribute() {
 ```java
 @Test(expected=TransientDataAccessResourceException.class)
 ```
+
+## 6.7.1. 트랜잭션 애노테이션
+스프링 3.0은 자바 5에서 등장한 어노테이션을 많이 사용한다. 
+
+### @Transactional
+스프링은 @Transactional이 부여된 모든 오브젝트를 자동으로 타깃 오브젝트로 인식한다. 이때 사용되는 포인트컷은 TransactionAttributeSourcePointcut이다. @Transactional은 기본적으로 트랜잭션 속성을 정의하는 것이지만, 동시에 포인트 컷의 자동등록에도 사용된다. 
+
+### 트랜잭션 속성을 이용하는 포인트컷
+![](https://velog.velcdn.com/images/nunddu/post/b66dcd4e-7fca-4cc6-b8ef-e46ab819cd9f/image.png)  
+
+이 방식을 이용하면 포인트컷과 트랜잭션 속성을 애노테이션 하나로 지정할 수 있다. 트랜잭션 속성은 타입 레벨에 일괄적으로 부여할 수도 있지만, 메소드 단위로 세분화해서 트랜잭션 속성을 다르게 지정할 수도 있기 때문에 매우 세밀한 트랜잭션 속성 제어가 가능해진다.
+
+### 대체정책
+스프링은 @Transactional을 적용할 때 4단계의 대체 정책을 이용하게 해준다. 메소드의 속성을 확인할 때 타깃 메소드, 타깃 클래스, 선언 메소드, 선언 타입의 순서에 따라서 @Transactional이 적용됐는지 차례로 확인하고, 가장 먼저 발견되는 속성정보를 사용하게 하는 방법이다. 
+
+```java
+[1]
+public interface Service {
+    [2]
+    void method();
+    [3]
+    void method2();
+}
+
+[4]
+public class ServiceImpl implements Service {
+    [5]
+    public void method1() {}
+    [6]
+    public void method2() {}
+}
+```
+
+@Transactional을 사용하면 대체 정책을 잘 활용해서 애노테이션 자체는 최소한으로 사용하면서도 세밀한 제어가 가능하다. 기본적으로 @Transactional 적용 대상은 클라이언트가 사용하는 인터페이스가 정의한 메소드이므로 @Transactional 적용 대상은 클라이언트가 사용하는 인터페이스가 정의한 메소드이므로 @Transactional도 타깃 클래스보다는 인터페이스에 두는 게 바람직하다. 하지만 인터페이스를 사용하는 프록시 방식의 AOP가 아닌 방식으로 트랜잭션을 적용하면 인터페이에 정의한 @Transactional은 무시되기 때문에 안전하게 타깃 클래스에 @Transactional을 두는 방법을 권장한다.
+
+## 6.8.1 선언적 트랜잭션과 트랜잭션 전파 속성
+
+![](https://velog.velcdn.com/images/nunddu/post/0e624243-a288-46a1-b543-f778e7ad02f7/image.png)  
+
+트랜잭션 전파 속성이 없다면 다양한 상황에서 User의 add 기능이 다양한 서비스 메소드에서 필요하고 그만큼 중복이 발생했을 것이다. AOP를 이용해 코드 외부에서 트랜잭션의 기능을 부여해주고 속성을 지정할 수 있게 하는 방법을 **선언적 트랜잭션**이라고 한다. 반대로 개별 데이터 기술의 트랜잭션 API를 사용해 직접 코드 안에서 사용하는 방법은 **프로그램에 의한 트랜잭션**이라고 한다. 
+
+## 6.8.2 트랜잭션 동기화와 테스트
+
+### 트랜잭션 매니저를 이용한 테스트용 트랜잭션제어
+메소드를 추가하지 않고도 테스트 코드만으로 세 메소드의 트랜잭션을 통합하는 방법이 있다. 테스트 메소드에서 UserService의 메소드를 호출하기 전에 트랜잭션을 미리 시작해주기만 하면 된다.
+
+```java
+@Test
+public void transactionSync() {
+
+    DefaultTransactionDefinition txDefinition = new DefaultTransactionDefinition();
+    TransactionStatus txStatus = transactionManager.getTransaction(txDefinition);
+
+    userService.deleteAll();
+
+    userService.add(users.get(0));
+    userService.add(users.get(1)); // 앞에서만들어진 트랜잭션에 모두 참여한다.
+    
+
+    transactionManager.commit(txStatus); // 앞에서 시작한 트랜잭션을 커밋
+}
+
+```
+
+### 트랜잭션 동기화 검증
+
+```java
+public void transactionSync() {
+    DefaultTransactionDefinition txDefinition = new DefaultTransactionDefinition();
+    txDefinition.setReadOnly(true);
+
+    TransactionStatus txStatus = transactionManager.getTransaction(txDefinition);
+
+    userService.deleteAll(); // 테스트 코드에서 시작한 트랜잭션에 참여한다면 읽기전용 속성을 위반 했으니 예외가 발생한다.
+}
+```
+해당 테스트를 실행해보면 테스트코드 내에서 시작한 트랜잭션에 deleteAll() 메소드가 참여하고 있어 예외가 발생하는 것을 확인할 수 있고 트랜잭션 매니저를 통해 테스트환경에서도 트랜잭션을 묶을 수 있는 것을 검증할 수 있다. 
+
+## 6.8.3 테스트를 위한 트랜잭션 애노테이션
+
+### @Transactional
+테스트에도 @Transactional을 적용할 수 있다. 테스트 클래스 또는 메소드에 @Transactional 어노테이션을 부여해주면 테스트 메소드에 트랜잭션 경계가 자동으로 설정된다. 이를 이용하면 **테스트 내에서 진행하는 모든 트랜잭션 관련 작업을 하나로 묶어줄 수 있다.** 번거로운 코드 사용 대신 간단한 어노테이션만으로 트랜잭션이 적용된 테스트를 손쉽게 만들 수 있다. 
+
+```java
+// 테스트에 적용된 @Transactional
+
+@Test
+@Transactional
+public void transactionSync() {
+    userService.deleteAll();
+    userService.add(users.get(0));
+    userService.add(users.get(1));
+}
+```
+마찬가지로 트랜잭션 전파 여부를 확인하고 싶으면 읽기 전용으로 바꾸고 예외를 던지는지 확인해보면 된다.
+
+```java
+@Test
+@Transactional(readOnly=true)
+public void transactionSync() {
+    userService.deleteAll(); // 트랜잭션 속성 위반으로 예외 발생
+}
+```
+
+### @Rollback
+테스트에 적용된 `@Transactional`은 기본적으로 트랜잭션을 강제 롤백시키도록 설정되어 있다. 테스트 메소드 안에서 진행되는 작업을 하나의 트랜잭션으로 묶고싶지만 강제 롤백을 원하지 않는 경우네는 `@Rollback`이라는 어노테이션을 사용하면 된다. 롤백은 기본값을 true로 가지고 있어 롤백을 원하지 않는다면 `@Rollback`(false)로 명시해준다.
+
+### @TransactionConfiguration
+`@Transactional`은 테스트 클래스에 넣어서 모든 테스트 메소드에 일괄 적용할 수 있지만 `@Rollback`은 메소드 레벨에서만 사용할 수 있다. `@TransactionConfiguration`을 사용하면 롤백에 대한 공통 속성을 지정하고 예외적인 메소드에는 속성을 새로 지정할 수 있다.
+
+### NotTransactional과 Propagation.NEVER
+특정 메소드에만 테스트 메소드에 의한 트랜잭션이 시작되지 않도록 만들어줄 수 있다. `@NotTransactional`을 테스트 메소드에 부여하면 클래스 레벨의 `@Transactional` 설정을 무시하고 트랜잭션을 시작하지 않은 채로 테스트를 진행한다. 물론 테스트 안에서 호출하는 메소드에서 트랜잭션을 사용하는데는 영향을 주지 않는다. 또 다른 방법은 `Transactional(propagation=Propagation.NEVER)`를 지정해주면 트랜잭션이 시작되지 않는다. 
+
+### 효과적인 DB 테스트
+테스트 내에서 트랜잭션을 제어할 수 있는 네 가지 어노테이션을 잘 활용하면 DB가 사용되는 통합 테스트를 만들 때 매우 편리하다. DB가 사용되는 통합 테스트를 별도의 클래스로 만들어둔다면 기본적으로 클래스 레벨에 @Transactional을 부여해준다. DB가 사용되는 통합 테스트는 가능한 한 롤백 테스트로 만드는게 좋다. **모든 테스트를 한꺼번에 실행하는 빌드 스크립트 등에서 테스트에서 공통적으로 이용할 수 있는 테스트 DB를 셋업해주고, 각 테스트는 자신이 필요한 테스트 데이터를 보충해서 테스트를 진행하게 만든다. 테스트는 어떤 경우에도 서로 의존하면 안된다.** 
