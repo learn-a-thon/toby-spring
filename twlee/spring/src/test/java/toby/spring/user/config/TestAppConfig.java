@@ -35,9 +35,9 @@ public class TestAppConfig {
         return new TestUserServiceImpl(userDao, dataSource, mockMailSender);
     }
 
-    @Bean
+//    @Bean
     public DefaultPointcutAdvisor transactionAdvisor() {
-        return new DefaultPointcutAdvisor(aspectJExpressionPointcut(), transactionAdvice());
+        return new DefaultPointcutAdvisor(transactionPointcut(), transactionAdvice());
     }
 
     @Bean
@@ -77,7 +77,7 @@ public class TestAppConfig {
         return new TransactionInterceptor(transactionManager, transactionAttributeSource());
     }
 
-    @Bean
+//    @Bean
     public DefaultAdvisorAutoProxyCreator defaultAdvisorAutoProxyCreator() {
         return new DefaultAdvisorAutoProxyCreator();
     }

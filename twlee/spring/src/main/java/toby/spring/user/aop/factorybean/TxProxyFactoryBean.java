@@ -10,7 +10,7 @@ import toby.spring.user.service.UserService;
 
 import java.lang.reflect.Proxy;
 
-@Component("userService")
+@Component
 public class TxProxyFactoryBean implements FactoryBean<Object> {
     private Object target;
     private final PlatformTransactionManager transactionManager;
