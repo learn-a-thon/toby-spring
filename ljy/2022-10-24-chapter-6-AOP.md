@@ -735,19 +735,152 @@ public class Target implements TargetInterface {
 
 `public int springbook.learningtest.spring.pointcut.Target.minus(int, int) throws java.lang.RuntimeException`
 
- - public   
+ - `public`   
  접근 제한자로 포인트컷 표현식에서 생략할 수 있다.
- - int  
+ - `int`  
  리턴 값의 타입을 나타내는 패턴이다. 포인트컷의 표현식에서 리턴 값의 타입 패턴은 필수. *로 모든 타입 지정 가능
- - springbook.learningtest.spring.pointcut.Target  
+ - `springbook.learningtest.spring.pointcut.Target`  
  패키지 경로로 생략 가능. 
- - minus  
+ - `minus`  
  메소드 이름 패턴이다. 필수항목 *로 모든 메소드 지정 가능
- - (int, int)  
+ - `(int, int)`  
  메소드 파라미터의 타입 패턴으로 ','로 구분하면서 순서대로 적는다. 
- - throws java.lang.RuntimeException  
+ - `throws java.lang.RuntimeException`
  예외 이름에 대한 타입 패턴이다. 생략 가능
 
+## 6.5.4 AOP란 무엇인가?
+### 트랜잭션 서비스 추상화
+트랜잭션 적용이라는 추상적인 작업 내용은 유지한채로 구체적인 구현 방법을 자유롭게 바꿀 수 있도록 서비스 추상화 기법을 적용했다. 구체적인 구현 내용을 담은 의존 오브젝트는 런타임 시에 다이내믹하게 연결해준다는 DI를 활용한 전형적인 접근 방법. 트랜잭션 추상화란 결국 인터페이스와 DI를 통해 무엇을 하는지는 남기고, 그것을 어떻게 하는지를 분리한 것이다. 어떻게 할지는 더 이상 비즈니스 로직 코드에는 영향을 주지 않고 독립적으로 개발할 수 있게 댔다.
 
+### 프록시와 데코레이터 패턴
+트랜잭션의 경계 설정을 담당하는 코드의 특성 때문에 단순한 추상화와 메소드 추출 방법으로는 제거할 할 방법이 없었지만 DI를 이용해 데코레이터 패턴을 적용하는 방법을 사용했다. 클라이언트가 인터페이스와 DI를 통해 접근하도록 설계하고 데코레이터 패턴을 적용해서 비즈니스 로직을 담은 클래스의 코드에는 전형 영향을 주지 않으면서 트랜잭션이라는 부가기능을 부여할 수 있는 구조를 만들었다.
+
+### 다이내믹 프록시와 프록시 팩토리 빈
+프록시 클래스 없이도 프록시 오브젝트를 런타임 시에 만들어주는 JDK 다이내믹 프록시 기술을 적용했다. 덕분에 프록시 클래스 코드 작성의 부담도 덜고, 부가 기능 부여 코드 여기저기 중복돼서 나타나는 문제도 일부 해결할 수 있었다. 단, 동일한 기능의 프록시를 여러 오브젝트에 적용할 경우 오브젝트 단위로는 중복이 일어나는 문제는 해결하지 못함.
+
+### 자동 프록시 생성 방법과 포인트컷
+트랜잭션 적용 대상이 되는 빈마다 일일이 프록시 팩토리 빈을 설정해줘야 한다는부담이 남아있었다. 이를 위해 컨테이너 초기화 시점에서 자동으로 프록시를 만들어주는 방법을 도입했다. 프록시를 적용할 대상을 일일이 지정하지 않고 패턴을 이용해 자동으로 선정할 수 있또록, 클래스를 선정하는 기능을 담은 확장된 포인트컷을 사용했다. 덕분에 트랜잭션 부가기능을 어디에 적용 하는지에 대한 정보를 포인트컷이라는 독립적인 정보로 완전히 분리할 수 있었다. 최종적으로는 포인트컷 표현식이라는 깔끔한 방법을 선택할 수 있게 됐다.
+
+### 부가기능의 모듈화
+관심사가 같은 코드를 분리해 한데 모으는 것은 소프트웨어 개발의 가장 기본이 되는 원칙.  
+부가기능은 다른 핵심기능과 같은 레벨에서는 독립적으로 존재하기 어렵다. 지금까지 봐온 DI, 데코레이터 패턴, 다이내믹 프록시, 오브젝트 생성 후 처리, 자동 프록시 생성, 포인트컷과 같은 기법은 이런 문제를 해결하기 위해 적용한 대표적인 방법이다. 그렇게 트랜잭션 경계설정 기능은 TransactionAdvice라는 이름으로 모듈화될 수 있었다.
+
+### AOP: 관점 지향 프로그래밍
+
+## 6.5.5 AOP 적용기술
+### 프록시를 이용한 AOP
+스프링은 IoC/DI 컨테이너와 다이내믹 프록시, 데코레이터 패턴, 프록시 패턴, 자동 프록시 생성 기법, 빈 오브젝트의 후처리 조작 기법 등의 다양한 기술을 조합해 AOP를 지원하고 있다. 
+
+독립적으로 개발한 부가기능 모듈을 다양한 타깃 오브젝트의 메소드에 다이내믹하게 적용해주기 위해 가장 중요한 역할을 맡고 있는게 바로 프록시이다. 그래서 스프링 AOP는 프록시 방식의 AOP라고 할 수 있다. 
+
+## 6.6.1 트랜잭션 정의
+### 트랜잭션 전파
+트랜잭션 전파란 트랜잭션의 경계에서 이밎 진행중인 트랜잭션이 있을 때 또는 없을 때 어떻게 동작할 것인가를 결정하는 방식을 말한다. 
+ - PROPAGATION_REQUIRED  
+    진행중인 트랜잭션이 없으면 새로 시작하고, 이미 시작된 트랜잭션이 있으면 참여한다.
+ - PROPAGATION_REQUIRES_NEW  
+    항상 새로운 트랜잭션을 시작한다. 독자적으로 동작한다.
+ - PROPAGATION_NOT_SUPPORTED  
+    트랜잭션 없이 동작하도록 만들 수 있다. 진행 중인 트랜잭션이 있어도 무시한다. 
  
+### 격리수준
+모든 DB 트랜잭션은 격리수준을 갖고 있어야한다. 가능하면 모든 트랜잭션이 순차적으로 진행돼서 다른 트랜잭션의 작업에 독립적인 것이 좋지만, 그렇게되면 성능이 크게 떨어질 수 밖에 없다. 격리수준은 기본적으로 DB에 설정되어 있지만 JDBC 드라이버나 DataSource 등에서 재설정할 수 있다.
 
+### 제한시간
+트랜잭션을 수행하는 제한시간을 설정할 수 있다.
+
+### 읽기전용
+읽기전용으로 설정해두면 트랜잭션 내에서 데이터를 조작하는 시도를 막아줄 수 있다. 또한 데이터 엑세스 기술에 따라서 성능이 향상될 수 있다. 
+
+## 6.6.2 트랜잭션 인터셉터와 트랜잭션 속성
+메소드별로 다른 트랜잭션 정의를 적용하려면 어드바이스의 기능을 확장해야 한다. 마치 초기에 TransactionHandler에서 메소드 이름을 이용해 트랜잭션 적용 여부를 판단 했던 것과 비슷한 방식을 사용할 수 있다.
+
+### TransactionInterceptor
+스프링의 TransactionInterceptor를 이용해보자.
+
+```java
+public Object invoke(MethodInvocation invocation) throws Throwable {
+    TransactionStatus status = 
+        this.transactionManager.getTransaction(new DefaultTransactionDefinition()); // 트랜잭션 정의를 통한 네 가지 조건
+        try {
+            Objedt ret = invocation.proceed();
+            this.transactionManager.commit(status);
+            return ret;
+        } catch (RuntimeException e) { 
+            this.transactionManger.rollback(status);
+            throw e;
+        }
+}
+
+```
+체크 예외를 던지는 타깃에 사용한다면 문제가 될 수 있다. 런타임 예외가 아닌 체크 예외를 던지는 경우에는 이것을 예외상황으로 해석하지 않고 일종의 비즈니스 로직에 따른, 의미가 있는 리턴 방식의한 가지로 인식해서 트랜잭션을 커밋해버린다. TransactionInterceptor는 이런 TransactionAttribute를 Properties라는 일종의 맵 타입 오브젝트로 전달받는다. 컬렉션을 사용하는 이유는 메소드 패턴에 따라서 각기 다른 트랜잭션 속성을 부여할 수 있게 하기 위해서다. 
+
+## 6.6.3 포인트컷과 트랜잭션 속성의 적용 전략
+트랜잭션을 적용할 후보 메소드를 선정하는 작업은 포인트컷에 의해 진행된다. 
+
+### 트랜잭션 포인트컷 표현식은 타입 패턴이나 빈 이름을 이용한다.
+일반적으로 트랜잭션을 적용할 타깃 클래스의 메소드는 모두 트랜잭션 적용 후보가 되는 것이 바람직하다. 쓰기 작업이 없는 단순한 조회 작업만 하는 메소드에도 모두 트랜잭션을 적용하는게 좋다. 조회의 경우에는 읽기 전용으로 트랜잭션 속성을 설정해두면 그만큼 성능의 향상을 가져올 수 있다. 
+
+### 공통된 메소드 이름 규칙을 통해 최소한의 트랜잭션 어드바이스와 속성을 정의한다. 
+너무 다양하게 트랜잭션 속성을 부여하면 관리만 힘들어질 뿐이다. 따라서 기준이 되는 몇 가지 트랜잭션 속성을 정의하고 그에 따라 적절한 메소드 명명 규칙을 만들어두면 하나의 어드바이스만으로 애플리케이션의 모든 서비스 빈에 트랜잭션 속성을 지정할 수 있다. 
+
+### 프록시 방식 AOP는 같은 타깃 오브젝트 내의 메소드를 호출할 때는 적용되지 않는다.
+AOP에서는 프록시를 통한 부가기능의 적용은 클라이언트로부터 호출이 일어날 때만 가능하다. 여기서 클라이언트는 인터페이스를 통해 타깃 오브젝트를 사용하는 다른 모든 오브젝트를 말한다. 
+
+## 6.6.4 트랜잭션 속성 적용
+트랜잭션 속성과 그에 따른 트랜잭션 전략을 UserService에 적용해보자.
+
+### 트랜잭션 경계설정의 일원화 
+트랜잭션 경계설정의 부가기능을 여러 계층에서 중구난방으로 적용하는 건 좋지 않다. 비즈니스 로직을 담고 있는 서비스 계층 오브젝트의 메소드가 트랜잭션 경계를 부여하기에 가장 적절하다.  
+UserDao 인터페이승 정의된 메소드 중 대부분은 독자적인 트랜잭션을 가지고 사용될 가능성이 높다. 해당 메소드를 UserService 인터페이스에 추가한다.
+
+```java
+public interface UserService {
+    void add(User user);
+    User get(String id);
+    List<User> getAll();
+    void deleteAll();
+    void update(User user);
+
+    void upgradeLevels();
+}
+```
+
+```java
+public class UserServiceImpl implements UserService {
+    UserDao userDao;
+
+    public void deleteAll() { userDao.deleteAll(); }
+    public User get(String id) { userDao.get(id); }
+    public List<User> getAll() { userDao.getAll(); }
+    public void update() { userDao.update(); }
+
+}
+```
+
+### 트랜잭션 속성을 가진 트랜잭션 어드바이스 등록
+readOnly 트랜잭션 속성을 사용하는 어드바이스 등록.
+
+### 트랜잭션 속성 테스트
+트랜잭션 부가기능의 적용 전략을 수정했고 새로운 메소드도 추가했다. 
+
+```java
+public List<User> getAll() {
+    for (User user : super.getAll()) {
+        super.update(user);
+    }
+    return null;
+}
+```
+```java
+@Test
+public void readOnlyTransactionAttribute() {
+    testUserSertive.getAll();
+}
+```
+
+트랜잭션 속성이 제대로 적용됐다면 읽기전용 속성을 위반했기 때문에 예외가 발생한다. 읽기 전용 속성을 위반했을 때 발생하는 예외의 종류를 알게되었으니 아래 내용을 테스트에 반영하면 성공할 수 있다.
+
+```java
+@Test(expected=TransientDataAccessResourceException.class)
+```
