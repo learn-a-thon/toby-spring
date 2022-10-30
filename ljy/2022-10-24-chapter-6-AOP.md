@@ -318,5 +318,436 @@ public void upgradeLevels() throws Exception {
 }
 ```
 
+## 6.3 다이내믹 프록시와 팩토리 빈
+## 데코레이터 패턴
+데코레이터 패턴은 타깃에 부가적인 기능을 런타임 시 다이내믹하게 부여해주기 위해 프록시를 사용하는 패턴을 말한다. 한 개 이상의 프록시를 통해 순서를 정해 단계적으로 위임하는 구조로 기능을 더해갈 수 있다.  
+프록시로서 동작하는 각 데코레이터는 위임하는 대상에도 <U>인터페이스로 접근하기 때문에</U> 자신이 최종 타깃으로 위임하는지, 아니면 다음 단계의 데코레이터 프록시로 위임하는지 알지 못한다. 
+> 자바 IO 패키지의 InputStream과 OutputStream 구현 클래스는 데코레이터 패턴이 사용된 대표적인 예다.  
+데코레이터 패턴은 타깃의 코드를 손대지 않고, 클라이언트가 호출하는 방법도 변경하지 않은 채로 새로운 기능을 추가할 때 유용한 방법이다.
 
+## 프록시 패턴
+디자인패턴에서 말하는 프록시는 타깃에 대한 접근 방법을 제어하려는 목적을 가진 경우를 말한다.  
+클라이언트에게 타깃에 대한 레퍼런스를 넘겨야하는데, 실제 타깃 오브젝트를 만드는 대신 프록시를 넘겨주는 방법을 활용할 수 있다. 
+
+## 6.3.2 다이내믹 프록시
+프록시는 기존 코드에 영향을 주지 않으면서 타깃의 기능을 확장하거나 접근 방법을 제어할 수 있는 유용한 방법이다. reflect 패키지 안에 프록시를 손쉽게 만들 수 있도록 지원해주는 클래스들이 있다.
+
+## 리플렉션
+다이내믹 프록시는 리플렉션 기능을 이용해서 프록시를 만들어준다. 리플렉션은 자바의 코드 자체를 추상화해서 접근하도록 만든 것이다. 자바의 모든 클래스는 `.class`나 `getClass()` 메소드를 호출해 메타 정보를 가져오거나 오브젝트를 조작할 수 있다. 
+
+```java
+// 리플렉션을 이용해 메소드를 호출하는 학습테스트
+public class ReflectionTest {
+  @Test
+  public void invokeMethod() throws Exception {
+      String name = "Spring";
+        
+      // length()
+      assertThat(name.length(), is(6));
+        
+      Method lengthMethod = String.class.getMethod("length");
+      assertThat((Integer)lengthMethod.invoke(name), is(6));
+        
+      // charAt
+      assertThat(name.charAt(0), is('S'));
+        
+      Method charAtMethod = String.class.getMethod("charAt", int.class);
+      assertThat((Character)charAtMethod.invoke(name, 0), is('S'));
+  }
+}
+```
+
+## 프록시 클래스
+다이내믹 프록시를 이용한 프록시를 만들어보자.
+
+```java
+interface Hello {
+    String sayHello(String name);
+    String sayHi(String name);
+    String sayThankYou(String name);
+}
+
+public class HelloTest implements Hello {
+    String sayHello(String name) {
+        return "Hello " + name;
+    }
+
+    String sayHi(String name) {
+        return "Hi " + name;
+    }
+
+    String sayThankYou(String name) {
+        return "Thank You " + name;
+    }
+}
+```
+
+```java
+// 클라이언트 역할의 테스트
+@Test
+public void simpleProxy() {
+    Hello hello = new HelloTarget();
+    assertThat(hello.sayHello("Toby"), is("Hello Toby"));
+    assertThat(hello.sayHi("Toby"), is("Hi Toby"));
+    assertThat(hello.sayThankYou("Toby"), is("Thank You Toby"));
+}
+```
+
+Hello 인터페이스를 구현한 프록시를 만들어보자. 프록시에는 데코레이터 패턴을 적용해서 타깃인 HelloTarget에 부가기능을 추가한다.
+
+```java
+public class HelloUppercase implements Hello {
+  Hello hello;
+
+  public HelloUppercase(Hello hello) {
+      this.hello = hello;
+  }
+
+  @Override
+  public String sayHello(String name) {
+      // 위임과 부가기능 적용
+      return hello.sayHello(name).toUpperCase();
+  }
+
+  @Override
+  public String sayHi(String name) {
+      return hello.sayHi(name).toUpperCase();
+  }
+
+  @Override
+  public String sayThankYou(String name) {
+      return hello.sayThankYou(name).toUpperCase();
+  }
+}
+```
+
+```java
+// HelloUppercase 프록시 테스트
+Hello proxiedHello = new HelloUppercase(new HelloTarget());
+assertThat(proxiedHello.sayHello("Toby"), is("HELLO TOBY"));
+assertThat(proxiedHello.sayHi("Toby"), is("HI TOBY"));
+assertThat(proxiedHello.sayThankYou("Toby"), is("THANK YOU TOBY"));
+```
+
+## 다이내믹 프록시 적용
+클래스로 만든 프록시인 HelloUpperdcase를 다이내믹 프록시를 이용해 만들어보자. 동작방식은 다음과 같다. 
+![](https://velog.velcdn.com/images/nunddu/post/a3f0818c-84d0-4820-8682-865d19614ea2/image.png)  
+
+프록시 팩토리에게 인터페이스 정보만 제공해주면 해당 인터페이스를 구현한 클래스의 오브젝트를 자동으로 만들어준다. Hello 인터페이스를 제공하면서 프록시 팩토리에게 다이내믹 프록시를 만들어달라고 요청하면 Hello 인터페이스의 모든 메소드를 구현한 오브젝트를 생성해준다. InvocationHandler 인터페이스를 구현한 오브젝트를 제공해주면 다이내믹 프록시가 받는 모든 요청을 InvocationHandler의 invoke() 메소드로 보내준다. Hello 인터페이스의 메소드가 아무리 많더라도 invoke() 메소드 하나로 처리할 수 있다.  
+
+![](https://velog.velcdn.com/images/nunddu/post/2c6d5cf4-66ae-4669-a555-b9fef953bcb8/image.png)  
+
+
+```java
+// invocationHandler 구현
+public class UppercaseHandler implements InvocationHandler {
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        String rest = (String) method.invoke(target, args);
+        return ret.toUpperCase();
+    }
+}
+```
+
+InvoactionHandler를 사용하고 Hello 인터페이스를 구현하는 프록시를 만들면 다음과 같다.
+```java
+Hello proxiedHello = (Hello)Proxy.newProxyInstance(
+            // 동적으로 생성되는 다이내믹 프록시 클래스 로딩에 사용할 클래스로더
+            getClass().getClassLoader(),
+            // 구현할 인터페이스
+            new Class[] { Hello.class },
+            // 부가기능과 위임 코드를 담은 InvocationHandler
+            new UppercaseHandler(new HelloTarget()));
+```
+
+### 다이내믹 프록시의 확장
+현재는 모든 메소드의 리턴 타입이 스트링이라고 가정하지만 예외의 경우 런타임 시 캐스팅 오류가 발생할 수 있다.
+
+```java
+// 확장된 UppercaseHandler
+public class UppercaseHandler implements InvocationHandler {
+
+  // 어떤 종류의 인터페이스를 구현한 타깃에도 적용 가능하도록 Object 타입으로 수정
+  Object target;
+
+  public UppercaseHandler(Object target) {
+      this.target = target;
+  }
+
+  @Override
+  public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      Object ret = method.invoke(target, args);
+
+      // String인 경우에만 대문자 변경 기능을 적용
+      if (ret instanceof String) {
+          return ((String)ret).toUpperCase();
+      } else {
+          return ret;
+      }
+  }
+}
+```
+
+## 다이내믹 프록시를 이용한 트랜잭션 부가기능
+UserServiceTx를 다이내믹 프록시 방식으로 변경해보자. 트랜잭션 처리가 필요한 경우마다 UserServiceTx처럼 일일히 구현하는 것은 큰 부담이다. 
+
+### 트랜잭션 InvocationHandler
+트랜잭션 부가기능을 가진 핸들러의 코드
+```java
+public class TransactionHandler implements InvocationHandler {
+    // 부가기능을 제공할 타깃 오브젝트
+    private Object target;
+    // 트랜잭션 기능을 제공하는데 필요한 트랜잭션 매니저
+    private PlatformTransactionManager transactionManager;
+    // 트랜잭션을 적용할 메소드 이름 패턴
+    private String pattern;
+
+    public void setTarget(Object target) {
+        this.target = target;
+    }
+
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
+
+    public void setPattern(String pattern) {
+        this.pattern = pattern;
+    }
+
+    @Override
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        // 트랜잭션 적용 대상 메소드를 선별해서 트랜잭션 경계설정 기능을 부여해준다.
+        if (method.getName().startsWith(pattern)) {
+            return invokeInTransaction(method, args);
+        } else {
+            return method.invoke(target, args);
+        }
+    }
+
+    private Object invokeInTransaction(Method method, Object[] args) throws Throwable {
+        TransactionStatus status = this.transactionManager.getTransaction(new DefaultTransactionDefinition());
+
+        try {
+            // 트랜잭션을 시작하고 타깃 오브젝트의 메소드를 호출
+            Object ret = method.invoke(target, args);
+            // 정상적으로 처리되면 커밋
+            this.transactionManager.commit(status);
+            return ret;
+        } catch (InvocationTargetException e) {
+            // 예외 발생 시 롤백
+            this.transactionManager.rollback(status);
+            throw e.getTargetException();
+        }
+    }
+}
+```
+UserServiceTx 보다 코드는 복잡하지 않으면서 UserService뿐만 아니라 모든 트랜잭션이 필요한 오브젝트에 적용 가능한 트랜잭션 프록시 핸들러가 만들어졌다.
+
+## 6.3.4 다이내믹 프록시를 위한 팩토리 빈
+이제 TransactionHandler와 다이내믹 프록시를 스프링의 DI를 통해 사용할 수 있도록 만들어야 한다. 
+
+### 팩토리 빈
+팩토리 빈이란 스프링을 대신해서 오브젝트의 생성로직을 담당하도록 만들어진 특별한 빈을 말한다. 
+
+```java
+public interface FactoryBean<T> {
+  // 빈 오브젝트를 생성해서 돌려줌
+  T getObject() throws Exception;
+  // 셍성되는 오브젝트의 타입을 알려줌
+  Class<? extends T> getObjectType();
+  // getObject()가 돌려줒는 오브젝트가 항상 싱글톤 오브젝트인지 알려줌
+  boolean isSigleton();
+}
+```
+
+```java
+// 생성자를 제공하지 않는 클래스
+public class Message {
+  String text;
+
+  // 생성자가 private으로 선언되어 외부에서 생성자를 통해 오브젝트를 만들 수 없다.
+  private Message(String text) {
+      this.text = text;
+  }
+
+  public String getText() {
+      return text;
+  }
+
+  // 생성자 대신 사용할 수 있는 스태틱 팩토리 메소드 제공
+  public static Message newMessage(String text) {
+      return new Message(text);
+  }
+}
+```
+
+스프링은 private 생성자를 가진 클래스도 빈으로 등록해주면 리플렉션을 이용해 오브젝트를 만들어준다. 리플렉션은 private으로 선언된 접근 규약을 위반할 수 있는 강력한 기능이 있다. 일반적으로 private 생성자를 가진 클래스를 빈으로 등록하는 일은 권장되지 않으며, 등록하더라고 빈 오브젝트가 바르게 동작하지 않을 가능성이 있으니 주의해야한다.
+
+Message 클래스의 오브젝트를 생성해주는 팩토리 빈 클래스를 만들어보자.
+```java
+public class MessageFactoryBean implements FactoryBean<Message> {
+  String text;
+
+  /*
+   * 오브젝트를 생성할 때 필요한 정보를 팩토리 빈의 프로퍼티로 설정하여 대신 DI
+   * 주입된 정보는 오브젝트 생성 중 사용됨
+  */
+  public void setText(String text) {
+      this.text = text;
+  }
+
+  /*
+   * 실제 빈으로 사용될 오브젝트를 직접 생성
+   * 코드를 이용하므로 복잡한 방식의 오브젝트 생성과 초기화 작업도 가능
+  */
+  @Override
+  public Message getObject() throws Exception {
+      return Message.newMessage(this.text);
+  }
+
+  @Override
+  public Class<?> getObjectType() {
+      return Message.class;
+  }
+
+  /*
+   * getObject()가 돌려주는 오브젝트가 싱글톤인지 알려준다.
+   * 이 팩토리 빈은 요청할 때마다 새로운 오브젝트를 만들어주므로 false
+   * 이것은 팩토리 빈의 동작방식에 관한 설정이고, 
+   * 만들어진 빈 오브젝트는 싱글톤으로 스프링이 관리해줄 수 있다.
+  */
+  @Override
+  public boolean isSingleton() {
+      return false;
+  }
+}
+```
+팩토리 빈은 전형적인 팩토리 메소드를 가진 오브젝트다. 스프링은 FactoryBean인터페이스를 구현한 클래스가 빈의 클래스로 지정되면, 팩토리 빈 클래스의 오브젝트의 getObject() 메소드를 이용해 오브젝트를 가져오고, 이를 빈으로 사용한다. 
+
+### 프록시 팩토리 빈 방식의 장점
+ - 프록시를 적용할 대상이 구현하고 있는 인터페이스를 구현하는 프록시 클래스를 일일이 만들어야하는 번거로움
+ - 부가적인 기능이 여러 메소드에 반복적으로 나타나게 돼서 코드의 중복
+### 프록시 팩토리 빈의 한계
+ - 비슷한 팩토리 빈의 설정 중복 문제
+ - 핸들러가 오브젝트 프록시 팩토리 빈 개수만큼 만들어진다. (부가기능의 개수만큼 증가)
+
+ ## 6.4.1 스프링의 프록시 팩토리 빈
+ 스프링은 일관된 방법으로 프록시를 만들 수 있게 도와주는 추상 레이어를 제공한다. 스프링의 **ProxyFactoryBean**은 프록시를 생성해서 빈 오브젝트로 등록하게 해주는 팩토리 빈이다. ProxyFactoryBeanㅇ은 순수하게 프록시를 생성하는 작업만을 담당하고 프록시를 통해 제공해줄 부각기능은 별도의 빈에 둘 수 있다. 부가기능은 **MethodInterceptor**를 구현해서 만들 수 있다. 
+
+```java
+...
+@Test
+public void simpleProxy(){
+    // JDK 다이내믹 프록시 생성
+    Hello proxiedHello = (Hello)Proxy.newProxyInstance(
+      getClass().getClassLoader(),
+      new Class[]{Hello.class},
+      new UppercaseHandler(new HelloTarget()));
+}
+
+@Test
+public void proxyFactoryBean(){
+  ProxyFactoryBean pfBean = new ProxyFactoryBean();
+  pfBean.setTarget(new HelloTarget()); // 타깃 설정
+  pfBean.addAdvice(new UppercaseAdvice()); // 부가 기능을 담은 어드바이스를 추가
+
+  Hello proxiedHello = (Hello) pfBean.getObject(); // FactoryBean이므로 getObject()로 생성된 프록시를 가져온다.
+
+  ...
+}
+
+static class UpperAdvice implements MethodInterceptor{
+  public Object invoke(MethodInvocation invocation) throws Throwable{
+    // 메서드 실행 시 target obj를 저달할 필요 없음
+    // MethodInvocation에 target obj 정보가 들어 있기 때문이다.
+    // proceed()메서드를 실행하면 target obj의 메서드를 내부적으로 실행시켜 준다.
+    String ret = (String)invocation.proceed(); 
+    return ret.toUpperCase(); // 부가기능적용
+  }
+}
+```
+
+### 어드바이스: 타깃이 필요없는 순수한 부가기능
+인터페이스 타입을 제공하지 않아도 ProxyFactoryBean이 인터페이스 자동검출 기능을 사용해 target이 구현하고 있는 인터페이스 정보를 알아낸다.
+
+ProxyFactoryBean에는 여러 개의 MethodsInterceprot를 추가할 수 있다. ProxyFactoryBean 하나만으로 여러 개의 부가 기능을 제공해주는 프록시를 만들 수 있다. 새로운 부가기능을 추가할 때마다 프록시와 프록시 팩토리 빈도 추가해줘야 한다는 문제를 해결할 수 있다. 
+
+MethodInterceptor처럼 타깃 오브젝트에 적용하는 부가기능을 담은 오브젝트를 스프링에서는 어드바이스라고 부른다.
+
+어드바이스 : 타깃 오브젝트에 종속되지 않는 순수한 부가기능을 담은 오브젝트
+
+### 포인트컷: 부가기능 적용 대상 메소드 선정 방법
+![](https://velog.velcdn.com/images/nunddu/post/88647b10-c7be-461e-8be9-dd37d6c89519/image.png)  
+스프링은 부가기능을 제공하는 오브젝트를 어드바이스라고 부르고, 메소드 선정 알고리즘을 담은 오브젝트를 포인트컷이라고 부른다. 어드바이스와 포인트컷은 모두 프록시에 DI로 주입돼서 사용된다. 두 가지 모두 여러 프록시에서 공유가 가능하도록 만들어지기 때문에 싱글톤 빈으로 등록이 가능하다.
+ 1) 프록시는 클라이언트로부터 요청을 받으면 먼저 포인트컷에게 부가기능을 부여할 메소드인지 확인한다.
+ 2) 프록시는 포인트컷으로부터 부가기능을 적용할 대상 메소드인지 확인받으면, MethodInterceptor 타입의 어드바이스를 호출한다.
+
+### 어드바이스와 포인트컷의 재사용
+ProxyFactoryBean은 스프링의 DI와 템플릿/콜백 패턴, 서비스 추상화 등의 기법이 모두 적용된 것이다. 부가기능을 구현하는 어드바이스를 그대로 적용할 수 있고, 이름 패턴을 지정해서 메소드 선정 포인트 컷을 적용할 수도 있다. 
+
+## 6.5.2 DafaultAdvisorAutoProxyCreate의 적용
+### 클래스 필터를 적용한 포인트컷 작성
+NameMathchMethodPointCut을 상속해서 프로퍼티로 주어진 이름 패턴을 가지고 클래스 이름을 비교하는 ClassFilter를 추가하도록 만든다. 
+
+```java
+public class NameMatchClassMethodPointcut extends NameMatchMethodPonitcut {
+    public void setMappedClassNAme(String mappedClassName) {
+        this.setClassFilter(new SimpleClassFilter(mappedClassName));
+    }
+
+    static class SimpleClassFilter implements ClassFilter {
+        String mappedName;
+
+        private SimpleClassFiilter(String mappedName) {
+            this.mappedName = mappedName;
+        }
+
+        public boolean matches(Class<?> clazz) {
+            return PatternMatchUtils.simpleMatch(mappedName, clazz.getSimpleName()); // 와일드카드가 들어간 문자열 비교를 지원하는 스프링의 유틸성 메소드 *name, name*, *name* 등
+        }
+    }
+}
+
+```
+
+### 어드바이저를 이용하는 자동 프록시 생성기 등록
+적용할 자동 프록시 생성기인 DefaultAdvisorAutoProxyCreator는 등록된 빈 중에서 Advisor 인터페이스를 구현한 것을 모두 찾는다. 생성되는 모든 빈에 대해 어드바이저의 포인트컷을 적용해보면서 프록시 적용 대상을 선정한다. 
+
+### 6.5.3 포인트컷 표현식을 이용한 포인트컷
+기존의 단순한 필터 방식 대신에 더 복잡하고 세밀한 기준을 이용해 클래스나 메소드를 선정하게 하려면 어떻게 해야할까? 스프링은 아주 간단하고 효과적인 방법으로 포인트컷의 클래스와 메소드를 선정하는 알고리즘을 작성할 수 있는 방법을 제공한다. => **포인트컷 표현식**
+
+### 포인트컷 표현식
+포인트컷 표현식을 지원하는 포인트컷을 적용하려면 AspectJExpressionPointcut 클래스를 사용하면 된다. 포인트컷 표현식은 자바의 RegEx 클래스가 지원하는 정규식처럼 간단한 문자열로 복잡한 선정조건을 쉽게 만들어낼 수 있는 강력한 표현식을 지원한다.
+
+### 포인트컷 표현식 문법
+AspectJ 포인트컷 표현식은 포인트컷 지시자를 이용해 작성한다. 대표적으로 사용되는 것은 execution()이다.
+
+`execution([접근제한자 패턴] 타입패턴 [타입패턴.]이름패턴 (타입패턴 | "..", ...) [throws 예외 패턴])
+메소드의 풀 시그니처를 문자열로 비교하는 개념이다. 
+
+다음 문장을 실행하면 리플렉션의 Method 오브젝트가 제공하는 Target.minus()메소드의 풀 시그니처를 볼 수 있다.
+
+```java
+public class Target implements TargetInterface {
+    public int minus(int a, int b) throws RuntimeException { return 0; }
+}
+```
+`System.out.println(Target.class.getMethod("minus, int.class, int.class))`;
+
+`public int springbook.learningtest.spring.pointcut.Target.minus(int, int) throws java.lang.RuntimeException`
+
+ - public   
+ 접근 제한자로 포인트컷 표현식에서 생략할 수 있다.
+ - int  
+ 리턴 값의 타입을 나타내는 패턴이다. 포인트컷의 표현식에서 리턴 값의 타입 패턴은 필수. *로 모든 타입 지정 가능
+ - springbook.learningtest.spring.pointcut.Target  
+ 패키지 경로로 생략 가능. 
+ - minus  
+ 메소드 이름 패턴이다. 필수항목 *로 모든 메소드 지정 가능
+ - (int, int)  
+ 메소드 파라미터의 타입 패턴으로 ','로 구분하면서 순서대로 적는다. 
+ - throws java.lang.RuntimeException  
+ 예외 이름에 대한 타입 패턴이다. 생략 가능
+
+
+ 
 
