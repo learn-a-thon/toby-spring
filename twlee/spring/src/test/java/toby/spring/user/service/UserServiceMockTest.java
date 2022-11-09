@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.PlatformTransactionManager;
+import toby.spring.user.dao.MockUserDao;
 import toby.spring.user.dao.UserDao;
 import toby.spring.user.domain.User;
 
@@ -26,13 +28,18 @@ class UserServiceMockTest {
     @Autowired
     private MockMailSender mailSender;
 
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
     private List<User> userList;
-    private UserService userService;
+    private UserServiceImpl userServiceImpl;
+    private UserServiceTx userServiceTx;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userDao, dataSource, mailSender);
         userList = Arrays.asList(USER4, USER5, USER6, USER7, USER8, USER9);
+        userServiceImpl = new UserServiceImpl(new MockUserDao(userList), dataSource, mailSender);
+        userServiceTx = new UserServiceTx(userServiceImpl, transactionManager);
     }
 
     @Test
@@ -41,7 +48,7 @@ class UserServiceMockTest {
         for (User user : userList) {
             userDao.add(user);
         }
-        userService.upgradeLevels();
+        userServiceImpl.upgradeLevels();
 
         checkLevelUpgraded(userList.get(0), false);
         checkLevelUpgraded(userList.get(1), false);
