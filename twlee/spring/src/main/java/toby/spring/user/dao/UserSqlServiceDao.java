@@ -1,10 +1,8 @@
 package toby.spring.user.dao;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Component;
 import toby.spring.user.domain.Level;
 import toby.spring.user.domain.User;
 import toby.spring.user.exception.DuplicateUserIdException;
@@ -13,12 +11,15 @@ import toby.spring.user.sqlservice.SqlService;
 import javax.sql.DataSource;
 import java.util.List;
 
-@Component
+
 public class UserSqlServiceDao implements UserDao {
-    @Autowired
-    private JdbcTemplate jdbcTemplate;
-    @Autowired
-    private SqlService sqlService;
+    private final JdbcTemplate jdbcTemplate;
+    private final SqlService sqlService;
+
+    public UserSqlServiceDao(DataSource dataSource, SqlService sqlService) {
+        this.jdbcTemplate = new JdbcTemplate(dataSource);
+        this.sqlService = sqlService;
+    }
 
     private RowMapper<User> userRowMapper = (rs, rowNum) -> {
         User user = new User();
@@ -56,7 +57,8 @@ public class UserSqlServiceDao implements UserDao {
                 user.getPassword(),
                 user.getLevel().intValue(),
                 user.getLogin(),
-                user.getRecommend());
+                user.getRecommend(),
+                user.getEmail());
     }
 
     public User get(String id) {
@@ -94,9 +96,5 @@ public class UserSqlServiceDao implements UserDao {
         if (result != 1) {
             throw new RuntimeException("수정 실패");
         }
-    }
-
-    public void setDataSource(DataSource dataSource) {
-        this.jdbcTemplate = new JdbcTemplate(dataSource);
     }
 }
