@@ -10,7 +10,7 @@ import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import toby.spring.user.domain.Level;
 import toby.spring.user.domain.User;
 import toby.spring.user.exception.DuplicateUserIdException;
-import toby.spring.user.sqlservice.XmlSqlService;
+import toby.spring.user.sqlservice.SqlService;
 
 import javax.sql.DataSource;
 import java.sql.SQLException;
@@ -27,6 +27,18 @@ class UserSqlServiceDaoTest {
     @Autowired
     DataSource dataSource;
 
+    @Autowired
+    private SqlService xmlSqlService;
+
+    @Autowired
+    private SqlService xmlSqlV2Service;
+
+    @Autowired
+    private SqlService baseSqlService;
+
+    @Autowired
+    private SqlService defaultSqlService;
+
     private UserDao userDao;
 
     private User user1;
@@ -35,7 +47,10 @@ class UserSqlServiceDaoTest {
 
     @BeforeEach
     void setUp() {
-        userDao = new UserSqlServiceDao(dataSource, new XmlSqlService());
+//        userDao = new UserSqlServiceDao(dataSource, xmlSqlService);
+//        userDao = new UserSqlServiceDao(dataSource, xmlSqlV2Service);
+//        userDao = new UserSqlServiceDao(dataSource, baseSqlService);
+        userDao = new UserSqlServiceDao(dataSource, defaultSqlService);
 
         user1 = USER1;
         user2 = USER2;
