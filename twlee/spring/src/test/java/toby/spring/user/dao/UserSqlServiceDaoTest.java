@@ -39,6 +39,15 @@ class UserSqlServiceDaoTest {
     @Autowired
     private SqlService defaultSqlService;
 
+    @Autowired
+    private SqlService oxmSqlService;
+
+    @Autowired
+    private SqlService oxmSqlV2Service;
+
+    @Autowired
+    private SqlService oxmSqlV3Service;
+
     private UserDao userDao;
 
     private User user1;
@@ -50,7 +59,10 @@ class UserSqlServiceDaoTest {
 //        userDao = new UserSqlServiceDao(dataSource, xmlSqlService);
 //        userDao = new UserSqlServiceDao(dataSource, xmlSqlV2Service);
 //        userDao = new UserSqlServiceDao(dataSource, baseSqlService);
-        userDao = new UserSqlServiceDao(dataSource, defaultSqlService);
+//        userDao = new UserSqlServiceDao(dataSource, defaultSqlService);
+//        userDao = new UserSqlServiceDao(dataSource, oxmSqlService);
+//        userDao = new UserSqlServiceDao(dataSource, oxmSqlV2Service);
+        userDao = new UserSqlServiceDao(dataSource, oxmSqlV3Service);
 
         user1 = USER1;
         user2 = USER2;

@@ -19,7 +19,7 @@ public class BaseSqlService implements SqlService {
     }
 
     @PostConstruct
-    private void init() {
+    public void init() {
         sqlReader.read(sqlRegistry);
     }
 
