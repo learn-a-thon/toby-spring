@@ -51,6 +51,9 @@ class UserSqlServiceDaoTest {
     @Autowired
     private SqlService oxmSqlV4Service;
 
+    @Autowired
+    private SqlService oxmSqlEmbeddedService;
+
     private UserDao userDao;
 
     private User user1;
@@ -66,7 +69,8 @@ class UserSqlServiceDaoTest {
 //        userDao = new UserSqlServiceDao(dataSource, oxmSqlService);
 //        userDao = new UserSqlServiceDao(dataSource, oxmSqlV2Service);
 //        userDao = new UserSqlServiceDao(dataSource, oxmSqlV3Service);
-        userDao = new UserSqlServiceDao(dataSource, oxmSqlV4Service);
+//        userDao = new UserSqlServiceDao(dataSource, oxmSqlV4Service);
+        userDao = new UserSqlServiceDao(dataSource, oxmSqlEmbeddedService);
 
         user1 = USER1;
         user2 = USER2;
